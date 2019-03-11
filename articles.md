@@ -10,3 +10,4 @@ each group should have three entries. make sure to include your group name
   -"Deep Q Network vs Policy Gradients - An Experiment on VizDoom with Keras". Experiment using "our" scenario. Comparison between Policy Gradient and DQN. https://flyyufelix.github.io/2017/10/12/dqn-vs-pg.html (Attila)
   
   -Good summary of "Deep Reinforcement Learning" by Intel, with some hint about implementation. https://www.intel.ai/demystifying-deep-reinforcement-learning/#gs.1v5q6o (Attila)
+
