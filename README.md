@@ -14,6 +14,7 @@ We will meet Thursday at 13:00-14:00 (place TBD). According to the instructions 
 ### Git
  - We will communicate/share public information over this git repo, so first make sure you know how git works.
  - each group will select a name (and why not take a name out of dantes inferno? https://en.wikipedia.org/wiki/Inferno_(Dante) ). Make a folder in the `groups` directory in this git repo with your name in it, which is where you will keep project-specific information which can be shared (logbooks, etc.). entries on the leaderboard should be given under this name.
+ - Within your `groups/<malebolge-or-whatever>` folder, please create a file called `group_members.txt` with your team members
 
 ### Upload articles
 Each group will implement some sort of RL algorithm for Doom. I got some ideas, but I think a good way to kick things off is with a bit of googling. Therefore, each team should make two-three entries in the file: `articles.md`
