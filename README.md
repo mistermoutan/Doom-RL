@@ -5,6 +5,9 @@ Vizdoom is an open-sourced implementation of the video game Doom, and we will be
  
 To use vizdoom, we need a plugin which make it easy for our reinforcement learning agent to interact with doom. The plugin we will use is one I adapted from an implementation which had become obsolete (see install below).
 
+# Slack channel
+[This link](https://join.slack.com/t/vizdoomdtuf19/shared_invite/enQtNTc0NTQ5OTg0Njg4LTA2MjhlZWIwZjNmMGEyMmFiMTczY2RlNmE0ZjIzYmI5MTU4ZWE5M2M4YzdjNGE2YzRkOGU3ZDU1YjM3MjM2NjQ) is an invite to our own slack channel for collaboration, bragging and sharing dank memes. Come join the hive mind 👾
+
 # Formal stuff
 ## When and where
 We will meet Thursday at 13:00-14:00 (place TBD). According to the instructions Soeren has given, we only have 1 hour per week. I am very happy to listen to suggestions for how we can best make use of this time, however there will obviously be no time to debug code, etc. Therefore, expect to work independently, and make use of online resources.
