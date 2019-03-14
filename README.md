@@ -2,7 +2,7 @@
 The idea behind this project is to use reinforcement learning on Vizdoom: https://github.com/mwydmuch/ViZDoom 
 
 Vizdoom is an open-sourced implementation of the video game Doom, and we will be specifically concerned with 8 simplified scenarios. 
-
+ 
 To use vizdoom, we need a plugin which make it easy for our reinforcement learning agent to interact with doom. The plugin we will use is one I adapted from an implementation which had become obsolete (see install below).
 
 # Slack channel
