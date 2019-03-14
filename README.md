@@ -16,8 +16,9 @@ We will meet Thursday at 13:00-14:00 (place TBD). According to the instructions 
  - each group will select a name (and why not take a name out of dantes inferno? https://en.wikipedia.org/wiki/Inferno_(Dante) ). Make a folder in the `groups` directory in this git repo with your name in it, which is where you will keep project-specific information which can be shared (logbooks, etc.). entries on the leaderboard should be given under this name.
  - Within your `groups/<malebolge-or-whatever>` folder, please create a file called `group_members.txt` with your team members
  - Send me an email with your LDAP login (s123456) to get edit rights on git. Please use command line tools to edit to avoid overwriting each others work.
- - It is okay(ish) to edit the main gdoom env code, but make sure you are 100% backward compatible by default. Look at the registration code in `__init__.py` (the code I mucked aroudn in) to see how to register a new environment (i.e., new resulution, etc.).  
- preferred way to extend environment is to write a new wrapper class and handle special stuff inside it (look at the wrappers dir). When making changes outside your groups dir, please use command line tool to get merge warnings.  
+ - It is okay(ish) to edit the main gdoom env code, but make sure you are 100% backward compatible by default. Look at the registration code in `__init__.py` (the code I mucked aroudn in) to see how to register a new environment (i.e., new resolution, new reward functions, etc.).  
+ preferred/proper way to extend environment is to write a new wrapper class and handle special stuff inside it (look at the wrappers dir); this also ensures your changes are optional (and you can do whatever in the wrapper). When making changes outside your groups dir, please use command line tool to get merge warnings.  
+ it is, however, okay to add new keys to the info dict as needed
 
 ### Upload articles
 Each group will implement some sort of RL algorithm for Doom. I got some ideas, but I think a good way to kick things off is with a bit of googling. Therefore, each team should make two-three entries in the file: `articles.md`
