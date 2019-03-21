@@ -16,3 +16,14 @@ each group should have three entries. make sure to include your group name
   -Improvements for DQN "[Dueling Network Architectures For Deep Reinforcement Learning](https://arxiv.org/pdf/1511.06581.pdf)" (venskab-er-ren-magi)
   
   -[Deep RL Tutorial](https://simoninithomas.github.io/Deep_reinforcement_learning_Course/) by Thomas Simonini. Very well tought with articles, references and videos. (venskab-er-ren-magi)
+
+  - Tutorial for policy gradient "An introduction to Policy Gradients with Cartpole and Doom" [here](https://medium.freecodecamp.org/an-introduction-to-policy-gradients-with-cartpole-and-doom-495b5ef2207f?fbclid=IwAR3wzmtKkvSqSVRUuerrnu1eUYeOeK5ntjVerayTY0WLgASPgoshsnpnBvE) applied on doom. (Leszy)
+
+  - Benchmarking Deep Reinforcement Learning for Continuous Control [here](https://arxiv.org/pdf/1604.06778.pdf) (Leszy)
+
+
+  - Q-PROP:SAMPLE-EFFICIENT POLICY GRADIENT WITH AN OFF-POLICY CRITIC (code available [here](https://arxiv.org/pdf/1611.02247.pdf)) (Leszy)
+
+
+  - State of the Art Control of Atari GamesUsing Shallow Reinforcement Learning [here](http://www.ifaamas.org/Proceedings/aamas2016/pdfs/p485.pdf) (Leszy)
+

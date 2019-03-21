@@ -29,6 +29,23 @@ Each entry should contain your group name and correspond to an RL method/idea in
 ### The leaderboard
 We will keep a leaderboard for how well we perform on the different vizdoom tasks. Entries to the leaderboard should report kills and time alive (when appropriate), and otherwise time used to complete the task. Since RL requires a lot of compute, we will report our methods in terms of number of rendered frames in the environment. It is very important you report this number since without it, the person with the biggest GPU wins, which is not very sporting. Please note the projects are NOT evaluated by the overall performance, as we should expect systematic difference between the methods (I have some idea, but I really don't know)
 
+__baseline__
+
+It is possible to establish baseline scores for every scenario (Or almost). 
+For a single run, random possible actions are fed to the ```step``` function of the environment, until the computer player dies. Then the results are stored and averaged over a sample of 200 runs to get average random baseline scores. the results are presented in the following table:
+
+| Scenario | Possible Actions | Baseline |
+| -------- | ---------------- | -------- |
+| 0        |    [0,1,2]       |   {'time_alive': 36.56, 'accumulated_reward': -131.76999999999992, 'kills': 0.33}       |
+| 1        | [0,1,2,3,4,5,6]  |    {'time_alive': 17.575, 'accumulated_reward': -113.53656027221678, 'kills': 0.0}      |
+| 2        |    [0,1,2]       |  {'time_alive': 67.812, 'accumulated_reward': 0.15589999999999998, 'kills': 1.569}       |
+| 3        |    [0,1,2]       |   {'time_alive': 104.25, 'accumulated_reward': 13.630500000000008, 'kills': 8.075}       |
+| 4        |    [0,1,2]       |  skipped because no death        |
+| 5        |  [0,1,2,3,4]     |  skipped because no death        |
+| 6        |    [0,1,2]       |  {'time_alive': 13.465, 'accumulated_reward': 0.0023049999999999577, 'kills': 0.015}        |
+| 7        |     [0,1]        |   {'time_alive': 64.05, 'accumulated_reward': 258.3785000000004, 'kills': 0.0}       |
+
+
 ### Logboook and contributions to leaderboard
 You also need to upload a logbook. This will happen in your own subfolder of this gitlab repo. Soeren should have provided instructions
 
