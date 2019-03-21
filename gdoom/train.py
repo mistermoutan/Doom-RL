@@ -104,7 +104,6 @@ def train(env, policy):
 
     print('done')
 
-
 def discount_and_normalize_rewards(episode_rewards, discount_factor):
     discounted_episode_rewards = np.zeros_like(episode_rewards)
     cumulative = 0.0
