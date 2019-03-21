@@ -5,7 +5,6 @@ from gdoom_env import *
 from network import PolicyNet
 from train import train
 import matplotlib
-
 import matplotlib.pyplot as plt
 import torch
 
