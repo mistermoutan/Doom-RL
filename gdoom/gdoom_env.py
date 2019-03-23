@@ -6,6 +6,7 @@ import numpy as np
 import gym
 from gym import spaces, error
 import vizdoom
+from matplotlib import pyplot as plt
 
 CPU = 101
 HUMAN = 102
@@ -175,7 +176,9 @@ class GDoomEnv(gym.Env):
             self.game.make_action(  np.zeros([self.action_space.n]).tolist()   )
         elif self.mode == CPU:
             raise Exception("Error")
+		
 
+		# takes action and moves to next state
         self.game.advance_action(skiprate)
         r_t = self.game.get_last_reward()
         is_finished = self.game.is_episode_finished()
@@ -190,6 +193,8 @@ class GDoomEnv(gym.Env):
             image_buffer = np.transpose(image_buffer.copy(), [1, 2, 0])
             misc = state.game_variables
             info = {s: misc[k] for k,(s,_) in enumerate(collect_variables)}
+            print(info)
+
 
             self.info['time_alive'] += 1
             self.info['kills'] = info['kills'] # total kills
@@ -298,26 +303,40 @@ class WGDoomEnv(GDoomEnv):
     pass
 
 
-# if __name__ == "__main__":
+
+if __name__ == "__main__":
+
     # print("GDoomEnv called")
-    # from gym.utils.play import play
-    # import numpy as np
+
+
+    env_cpu = gym.make("doom_scenario2_64-v0")
+    frame = env_cpu.reset()
+
+    print("Frame size for cpu player: ", np.asarray(frame).shape)
+    plt.imshow(np.asarray(frame))
+
+    for i in range(1000):
+
+        # frame, r, dead, info = env_cpu.step()
+        #env_cpu.action_space.n     number of actions possible
+        print(env_cpu.step(np.random.randint(0,(env_cpu.action_space.n))))
+
+
+
+
+    
+    
+    # env_human = gym.make("doom_scenario2_human-v0")
+    # frame = env_human.reset()
+    
     #
+    # # env2 = SetPlayingMode(target_mode=HUMAN)(env2)
+    # play(env_human, fps=32)
+	    
     # # Make a CPU environemnt the good ol' way (not recommended, see __init__.py).
     # genv = WGDoomEnv(level=2, frame_size=89)
     # genv.reset()
     # a, _, _, _ = genv.step(0)
     # print( np.asarray(a).shape )
     #
-    # # Also make a GPU environment, but using openai:
-    # env_cpu = gym.make("doom_scenario2_64-v0")
-    # frame = env_cpu.reset()
-    # print("Frame size for cpu player: ", np.asarray(frame).shape )
-    #
-    #
-    # env_human = gym.make("doom_scenario2_human-v0")
-    # frame = env_human.reset()
-    # print("Frame size for homan player: ", np.asarray(frame).shape)
-    #
-    # # env2 = SetPlayingMode(target_mode=HUMAN)(env2)
-    # play(env_human, fps=32)
+    #Also make a GPU environment, but using openai:
