@@ -10,7 +10,9 @@ import vizdoom
 # FIXING PATH PB
 import sys
 HOME_DIR = '/'.join(os.path.dirname(os.path.realpath(__file__)).replace('\\','/').split('/')[:-1])
+sys.path.append(HOME_DIR)
 sys.path.append(HOME_DIR + "/baselines-master/")
+
 
 CPU = 101
 HUMAN = 102
