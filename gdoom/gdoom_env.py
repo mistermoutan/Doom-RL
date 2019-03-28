@@ -123,7 +123,6 @@ class GDoomEnv(gym.Env):
 
         dp = os.path.dirname(vizdoom.__file__)
         self.game = vizdoom.DoomGame()
-        # self.level = 0
 
         scenario = dp + "/scenarios/" + DOOM_SETTINGS[self.level][CONFIG]
         print("Doom> Loading level: " + scenario)
@@ -173,7 +172,7 @@ class GDoomEnv(gym.Env):
             a_t = a_t.astype(int)
             self.game.make_action(a_t.tolist())
         elif action == -1 and self.mode == HUMAN:
-            self.game.make_action(  np.zeros([self.action_space.n]).tolist()   )
+            self.game.make_action(np.zeros([self.action_space.n]).tolist())
         elif self.mode == CPU:
             raise Exception("Error")
 		
@@ -306,20 +305,30 @@ class WGDoomEnv(GDoomEnv):
 
 if __name__ == "__main__":
 
-    # print("GDoomEnv called")
-
-
+    print("GDoomEnv called")
     env_cpu = gym.make("doom_scenario2_64-v0")
     frame = env_cpu.reset()
+    #print(type(frame))
+    #np_frame = np.asarray(frame)
+    #print("Frame size for cpu player: ", np.asarray(frame).shape)
+    #plt.imsave("test.png",np.asarray(np_frame[:,:,3]))        this is the 4 stack
 
-    print("Frame size for cpu player: ", np.asarray(frame).shape)
-    plt.imshow(np.asarray(frame))
+    #for i in range(10):
 
-    for i in range(1000):
+        #plt.ion()
+        #print(type(env_cpu.observation_space.shape))
+        #frame_from_action, r, dead, info = env_cpu.step(np.random.randint(0,(env_cpu.action_space.n)))
+        #np_frame_from_action = np.asarray(frame_from_action)
+        #print(np_frame_from_action.shape)
+        #plt.imshow(np_frame_from_action[:,:,0], cmap = 'gray') 
+        #plt.pause(0.01)
+        #plt.draw()
+       
 
-        # frame, r, dead, info = env_cpu.step()
+
+        #plt.imsave("test4.png",np_frame_from_action[:,:,3])) 
         #env_cpu.action_space.n     number of actions possible
-        print(env_cpu.step(np.random.randint(0,(env_cpu.action_space.n))))
+        #print(env_cpu.step(np.random.randint(0,(env_cpu.action_space.n))))
 
 
 
