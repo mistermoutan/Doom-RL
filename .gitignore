@@ -105,3 +105,9 @@ venv.bak/
 
 gdoom/videos/
 *.mp4
+
+baselines-master/__pycache__/
+baselines-master/baselines/__pycache__/
+gdoom/baselines/common/__pycache__/
+gdoom/wrappers/__pycache__/
+gdoom/__pycache__/
