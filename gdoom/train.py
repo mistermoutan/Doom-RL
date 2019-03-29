@@ -20,10 +20,10 @@ class Model:
 def train(env, policy,critic):
 
     num_epochs = 2000
-    batch_size = 1 # max rollout length
+    batch_size = 100 # max rollout length
     discount_factor = 0.95 # reward discount factor (gamma), 1.0 = no discount
-    optimizer = optim.Adam(policy.parameters(), lr=0.00005) #update parameters
-    optimizer_critic = optim.Adam(critic.parameters(),lr = 0.00005) #update parameters
+    optimizer = optim.Adam(policy.parameters(), lr=0.000001) #update parameters
+    optimizer_critic = optim.Adam(critic.parameters(),lr = 0.00001) #update parameters
     loss_lsq = torch.nn.MSELoss()
     NLL = nn.NLLLoss(reduction='none') # cost 
 
@@ -92,7 +92,7 @@ def train(env, policy,critic):
         #print("POST \n", rewards_of_batch)
         #print("TARGET VALUES CRITIC \n", target_values_critic)
         target_values_critic = np.concatenate(target_values_critic)
-        #target_values_critic = sigmoid_list(target_values_critic) #make sigmoid 
+        target_values_critic = make_list_sigmoid(target_values_critic) #make sigmoid 
         
 
         rewards_of_batch = np.concatenate(rewards_of_batch)
@@ -123,16 +123,15 @@ def train(env, policy,critic):
             observed_values_critic_shifted[c] = 0
             temp = 0
 
-        
+        #IMPROVE THIS
         discount_factor_critic = 0.9
-
+        
         # policy gradient update
         actual_batch_size = states.shape[0] #can be different from batch size as episode length is not constant
         optimizer.zero_grad()
         states_batch = torch.from_numpy(normalize(states)).float().permute(0,3,2,1)
         a_probs = policy(states_batch)
-        print("A PROBS\n",a_probs)
-        #print(rewards_of_batch.shape,observed_values_critic_shifted.shape,observed_values_critic.shape)
+        #print("A PROBS\n",(a_probs.numpy())[:5])
         
         observed_values_critic_shifted = observed_values_critic_shifted.reshape(-1)
         observed_values_critic = observed_values_critic.reshape(-1)
@@ -154,6 +153,7 @@ def train(env, policy,critic):
         print("-----------")
         print("Number of training episodes: {}".format(num_episode))
         print("Average Lenght of Episode: {}".format(np.mean(len_episodes_batch)))
+        print(len_episodes_batch)
         print("Total reward: {0:.2f}".format(np.sum(rewards_of_batch)))
         print("Mean Reward of that batch {0:.2f}".format(np.mean(rewards_of_batch)))
         print("Training Loss for Actor: {0:.2f}".format(loss.item()))
@@ -174,13 +174,15 @@ def train(env, policy,critic):
     print('done')
 
 
-def sigmoid_list(lista):
+def make_list_sigmoid(lista):
 
     for i in range(len(lista)):
         lista[i] = (1/(1+np.exp(-lista[i])))
     return lista
 
-def 
+def deep_copy(x):
+    return [y[:] for y in x]
+
 def critic_target_values(batch_rewards):
     """
     At each state, the target value is the sum of the rewards that were still obtained in the episode

@@ -79,7 +79,8 @@ class CriticNet(nn.Module):
             nn.Linear(512, 256),
             nn.ELU())
         self.fc3 = nn.Sequential(
-            nn.Linear(256, 1))
+            nn.Linear(256, 1),
+            nn.Sigmoid()) #benchmark
 
 
     def forward(self, x):
