@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 def discount_and_normalize_rewards(episode_rewards, discount_factor):
     discounted_episode_rewards = np.zeros_like(episode_rewards)
@@ -17,20 +18,22 @@ def discount_and_normalize_rewards(episode_rewards, discount_factor):
 #print(discount_and_normalize_rewards([1,2,3,4,5,6],0.95))
 
 def critic_target_values(batch_rewards):
+
     # at each state, the target value is the sum of the rewards that were still obtained in the episode
-    for episode in batch_rewards:
+    print(batch_rewards)
+    batch_rewards_copy = copy.deepcopy(batch_rewards)  #deep copy
+    episode_lenghts = []
+
+    i = 0
+    for episode in batch_rewards_copy:
+        episode_lenghts.append(len(episode)) # keep track of how long untill agent dies
         for episode_reward in (range(len(episode))):
-
             episode[episode_reward] = sum(episode[episode_reward:])
+        i += 1
 
-    return batch_rewards
-"""         
-discount_critic = critic_target_values([[1,2,3],[5,4,2]])[0]
-print(discount_critic)
-discount_critic = discount_and_normalize_rewards(discount_critic,0.95)
-print(discount_critic)
-#print(critic_target_values([[1,2,3],[2,2,2]]))
-a = (np.stack([0,1,2,3,4,5,6,7]))
-print(np.roll(a,1))
-"""
-print(discount_and_normalize_rewards([2,4,5,6,7,8,9],0.95))
+    print("Length of episodes:", episode_lenghts)
+    print(batch_rewards,batch_rewards_copy)
+    return batch_rewards_copy      
+
+rewards_of_episode = [[2,3,4,5],[2,1,1,5]]
+print(critic_target_values(rewards_of_episode))

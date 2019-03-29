@@ -1,6 +1,6 @@
 import logging
 import os
-
+from gym.utils.play import play
 import numpy as np
 
 import gym
@@ -185,14 +185,17 @@ class GDoomEnv(gym.Env):
         if is_finished:
             if self.mode == HUMAN:
                 print("Total reward accumulated: ", self.accumulated_reward, " time alive ", self.time_alive)
+            info = {s: misc[k] for k,(s,_) in enumerate(collect_variables)}
+            print(info)
             info = {}
             image_buffer = np.zeros(shape=self.observation_space.shape, dtype=np.uint8)
+            
         else:
             image_buffer = state.screen_buffer
             image_buffer = np.transpose(image_buffer.copy(), [1, 2, 0])
             misc = state.game_variables
             info = {s: misc[k] for k,(s,_) in enumerate(collect_variables)}
-            print(info)
+            #print(info)
 
 
             self.info['time_alive'] += 1
@@ -305,9 +308,13 @@ class WGDoomEnv(GDoomEnv):
 
 if __name__ == "__main__":
 
-    print("GDoomEnv called")
-    env_cpu = gym.make("doom_scenario2_64-v0")
-    frame = env_cpu.reset()
+    #print("GDoomEnv called")
+    #env_cpu = gym.make("doom_scenario2_64-v0")
+    #frame = env_cpu.reset()
+    #print(env_cpu.action_space.n)
+    #frame_from_action, r, dead, info = env_cpu.step(3)
+
+
     #print(type(frame))
     #np_frame = np.asarray(frame)
     #print("Frame size for cpu player: ", np.asarray(frame).shape)
@@ -335,12 +342,12 @@ if __name__ == "__main__":
 
     
     
-    # env_human = gym.make("doom_scenario2_human-v0")
-    # frame = env_human.reset()
-    
+    env_human = gym.make("doom_scenario2_human-v0")
+    frame = env_human.reset()
+    play(env_human, fps=32)
+
     #
     # # env2 = SetPlayingMode(target_mode=HUMAN)(env2)
-    # play(env_human, fps=32)
 	    
     # # Make a CPU environemnt the good ol' way (not recommended, see __init__.py).
     # genv = WGDoomEnv(level=2, frame_size=89)

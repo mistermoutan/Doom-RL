@@ -12,8 +12,6 @@ import torch
 print("GDoomEnv called")
 
 
-
-
 ##################
 # Initialization #
 ##################
@@ -25,7 +23,7 @@ print("GDoomEnv called")
 #print( np.asarray(a).shape )
 
 # Also make a GPU environment, but using openai:
-env = gym.make("doom_scenario4_640-v0")
+env = gym.make("doom_scenario2_640-v0")
 frame = env.reset()
 
 #print("Frame size for cpu player: ", np.asarray(frame).shape )
