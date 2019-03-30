@@ -308,10 +308,10 @@ class WGDoomEnv(GDoomEnv):
 
 if __name__ == "__main__":
 
-    #print("GDoomEnv called")
+    print("GDoomEnv called")
     #env_cpu = gym.make("doom_scenario2_64-v0")
     #frame = env_cpu.reset()
-    #print(env_cpu.action_space.n)
+    #print("FEBFEFB",env_cpu.action_space.n)
     #frame_from_action, r, dead, info = env_cpu.step(3)
 
 
@@ -342,9 +342,9 @@ if __name__ == "__main__":
 
     
     
-    env_human = gym.make("doom_scenario2_human-v0")
-    frame = env_human.reset()
-    play(env_human, fps=32)
+    #env_human = gym.make("doom_scenario2_human-v0")
+    #frame = env_human.reset()
+    #play(env_human, fps=32)
 
     #
     # # env2 = SetPlayingMode(target_mode=HUMAN)(env2)

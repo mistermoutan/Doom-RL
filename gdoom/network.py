@@ -14,7 +14,7 @@ import imageio
 class PolicyNet(nn.Module):
     """Policy network"""
 
-    def __init__(self):
+    def __init__(self,n_actions):
         super(PolicyNet, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(4, 32, kernel_size=5, stride=2, padding=2),
@@ -35,7 +35,7 @@ class PolicyNet(nn.Module):
             nn.Linear(512, 256),
             nn.ELU())
         self.fc3 = nn.Sequential(
-            nn.Linear(256, 3),
+            nn.Linear(256, n_actions),
             nn.ELU())
 
 
@@ -79,8 +79,8 @@ class CriticNet(nn.Module):
             nn.Linear(512, 256),
             nn.ELU())
         self.fc3 = nn.Sequential(
-            nn.Linear(256, 1),
-            nn.Sigmoid()) #benchmark
+            nn.Linear(256, 1))
+            #nn.Sigmoid()) #benchmark
 
 
     def forward(self, x):

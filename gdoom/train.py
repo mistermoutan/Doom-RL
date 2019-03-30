@@ -20,10 +20,10 @@ class Model:
 def train(env, policy,critic):
 
     num_epochs = 2000
-    batch_size = 100 # max rollout length
+    batch_size = 10 # 1 epsiode only
     discount_factor = 0.95 # reward discount factor (gamma), 1.0 = no discount
-    optimizer = optim.Adam(policy.parameters(), lr=0.000001) #update parameters
-    optimizer_critic = optim.Adam(critic.parameters(),lr = 0.00001) #update parameters
+    optimizer_actor = optim.Adam(policy.parameters(), lr=0.0001) #update parameters
+    optimizer_critic = optim.Adam(critic.parameters(),lr = 0.0001) #update parameters
     loss_lsq = torch.nn.MSELoss()
     NLL = nn.NLLLoss(reduction='none') # cost 
 
@@ -32,7 +32,7 @@ def train(env, policy,critic):
     #], lr=0)
     
 
-    training_rewards, losses = [], []
+    training_rewards, losses_actor , losses_critic = [], [], []
     print('Start training')
     
     for epoch in range(num_epochs):
@@ -42,7 +42,10 @@ def train(env, policy,critic):
         s = cropping(s)
         num_episode = 1
         states, actions, rewards_of_episode, rewards_of_batch, discounted_rewards = [], [], [], [], []
-        value_observations,indices_of_last_state, value_observations_discounted = [] , [] , []
+        value_observations = [] 
+        masks = []
+
+        
 
         # build batch
         while True:
@@ -64,9 +67,12 @@ def train(env, policy,critic):
             rewards_of_episode.append(r)
             value_observations.append(estimated_value) #y's of critic
 
+            if not done:
+                masks.append(1)
+
             if done:
                 rewards_of_batch.append(rewards_of_episode)
-                indices_of_last_state.append((len(rewards_of_episode)))
+                masks.append(0)
                 # isn't this just making the final rewards of an episode go small, this should be for each time step
                 discounted_rewards.append(discount_and_normalize_rewards(rewards_of_episode, discount_factor))
                 #value_observations_discounted.append(discount_and_normalize_rewards(value_observations,discount_factor))
@@ -84,68 +90,48 @@ def train(env, policy,critic):
         states = np.stack(np.array(states))
         actions = np.stack(np.array(actions))
         actions = actions.astype(np.int64)
+        len_episodes_batch = lenght_of_episodes(rewards_of_batch)
+        rewards_of_batch = np.concatenate(rewards_of_batch)
+        actual_batch_size = states.shape[0] #can be different from batch size as episode length is not constant
+        states_batch = torch.from_numpy(normalize(states)).float().permute(0,3,2,1)
+        a_log_probs = policy(states_batch)
 
+        #observed values of critic
         observed_values_critic = np.stack(np.array(value_observations))
         observed_values_critic = np.concatenate(value_observations)
-        target_values_critic , len_episodes_batch = critic_target_values(rewards_of_batch)
-        #print("PRE \n",rewards_of_batch)
-        #print("POST \n", rewards_of_batch)
-        #print("TARGET VALUES CRITIC \n", target_values_critic)
-        target_values_critic = np.concatenate(target_values_critic)
-        target_values_critic = make_list_sigmoid(target_values_critic) #make sigmoid 
-        
+        observed_values_critic  = torch.Tensor(observed_values_critic).view(-1)
+        observed_values_critic = Variable(observed_values_critic,requires_grad = True)
 
-        rewards_of_batch = np.concatenate(rewards_of_batch)
-        returns = np.concatenate(discounted_rewards)
+        s1 = torch.from_numpy(normalize(s1)).float().permute(2,0,1).view(1,4,64,64)
+        next_value = critic(s1) #of last state of episode or of first state of next episode
+        target_values_critic = compute_returns_critic(next_value,rewards_of_batch,masks)
+        target_values_critic = torch.Tensor(target_values_critic).view(-1)
+        target_values_critic = Variable(target_values_critic,requires_grad = True)
 
-        #update critic
-        target = torch.Tensor(target_values_critic).view(-1)
-        observations = torch.Tensor(observed_values_critic).view(-1) 
-        target = Variable(target,requires_grad = True)
-        observations = Variable(observations,requires_grad = True)
-        loss_critic = loss_lsq(observations, target)  
+        advantage = target_values_critic - observed_values_critic
+        log_likelihood = NLL(a_log_probs, torch.LongTensor(actions))
+
+        optimizer_actor.zero_grad()
         optimizer_critic.zero_grad()
+
+        loss_actor = torch.sum(advantage.detach()*(log_likelihood)) #mean vs sum
+        loss_critic = torch.sum(advantage.pow(2))
+
+        loss_actor.backward()
         loss_critic.backward()
+        optimizer_actor.step()
         optimizer_critic.step()
 
 
-        """
-        V of st+1, this value will be wrong for the last state of an episode as it's going to be the total reward obtained in the next episode 
-        To fix this we say that the V(st+1) for the last state of each episode is 0 
-        Rudimentary solution. Consider other ways of doing this
-        """
-        observed_values_critic_shifted = np.roll(observed_values_critic,-1)
-        temp = 1
-        c = 0
-
-        for i in indices_of_last_state:
-            c = c + i - temp
-            observed_values_critic_shifted[c] = 0
-            temp = 0
-
-        #IMPROVE THIS
-        discount_factor_critic = 0.9
         
-        # policy gradient update
-        actual_batch_size = states.shape[0] #can be different from batch size as episode length is not constant
-        optimizer.zero_grad()
-        states_batch = torch.from_numpy(normalize(states)).float().permute(0,3,2,1)
-        a_probs = policy(states_batch)
-        #print("A PROBS\n",(a_probs.numpy())[:5])
+        #advantages_tensor = torch.Tensor(advantages).view(-1)
+
+        losses_actor.append(loss_actor.item())
+        losses_critic.append(loss_critic.item())
+
+
         
-        observed_values_critic_shifted = observed_values_critic_shifted.reshape(-1)
-        observed_values_critic = observed_values_critic.reshape(-1)
-        advantages = rewards_of_batch + (discount_factor_critic*observed_values_critic_shifted) - observed_values_critic  #discount factot
-        advantages_tensor = torch.Tensor(advantages).view(-1)
-
-        likelihood = NLL(a_probs, torch.LongTensor(actions)) #WHY?
-        loss = torch.sum(advantages_tensor*likelihood)  #torch.mean vs torch.sum
-        loss.backward()
-        optimizer.step()
-
-        losses.append(loss.item())
-
-        # bookkeeping
+       # bookkeeping
         training_rewards.append(np.mean(rewards_of_batch))
 
         print("==========================================")
@@ -156,7 +142,7 @@ def train(env, policy,critic):
         print(len_episodes_batch)
         print("Total reward: {0:.2f}".format(np.sum(rewards_of_batch)))
         print("Mean Reward of that batch {0:.2f}".format(np.mean(rewards_of_batch)))
-        print("Training Loss for Actor: {0:.2f}".format(loss.item()))
+        print("Training Loss for Actor: {0:.2f}".format(loss_actor.item()))
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
@@ -183,26 +169,55 @@ def make_list_sigmoid(lista):
 def deep_copy(x):
     return [y[:] for y in x]
 
-def critic_target_values(batch_rewards):
+# https://github.com/yc930401/Actor-Critic-pytorch/blob/master/Actor-Critic.py
+def compute_returns_critic(next_value, rewards, masks, gamma=0.99):
     """
+    Batch should only contain one episdoe to use this approach
+    """
+    R = next_value
+    returns = []
+    for step in reversed(range(len(rewards))):
+        R = rewards[step] + gamma * R * masks[step]
+        returns.insert(0, R)
+    return returns
+
+def lenght_of_episodes(list_of_lists):
+
+    if list_of_lists[0] is int:
+        return len(list_of_lists)
+    else:
+        lenghts = []
+        for l in list_of_lists:
+            lenghts.append((len(l)))
+        return lenghts    
+
+
+
+"""
+def critic_target_values(batch_rewards,gamma = 0.99):
+    
     At each state, the target value is the sum of the rewards that were still obtained in the episode
+    with discount factor gamma
     Returns: 
         - List of Lists containing the target values of the critc
         - List containing lenght of each episode in the batch
-    """
+    
 
     batch_rewards_copy = [x[:] for x in batch_rewards] 
     episode_lenghts = []
 
-    i = 0
     for episode in batch_rewards_copy:
         episode_lenghts.append(len(episode)) # keep track of how long untill agent dies
-        for episode_reward in (range(len(episode))):
-            episode[episode_reward] = sum(episode[episode_reward:])
-        i += 1
+        for episode_reward in reversed(range(len(episode))):
+            try:
+                episode[episode_reward] += (gamma * episode[episode_reward +1]) 
+
+            except IndexError:
+                episode[episode_reward -1]  += (gamma * episode[episode_reward]) 
+                episode[episode_reward] = 0
 
     return batch_rewards_copy, episode_lenghts  
-
+"""
 
 def discount_and_normalize_rewards(episode_rewards, discount_factor):
     discounted_episode_rewards = np.zeros_like(episode_rewards)

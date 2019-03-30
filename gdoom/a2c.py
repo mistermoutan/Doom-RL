@@ -41,10 +41,8 @@ n_hidden = 256
 learning_rate = 0.00005
 n_outputs = env.action_space.n
 
-policy = PolicyNet()
+policy = PolicyNet(env.action_space.n)
 critic = CriticNet()
-#print(policy)
-#print(policy(torch.randn(1,4,64,64)))
 
 
 ################
