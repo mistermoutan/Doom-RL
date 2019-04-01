@@ -6,7 +6,6 @@ import numpy as np
 import gym
 from gym import spaces, error
 import vizdoom
-from matplotlib import pyplot as plt
 
 CPU = 101
 HUMAN = 102
@@ -175,7 +174,7 @@ class GDoomEnv(gym.Env):
             self.game.make_action(np.zeros([self.action_space.n]).tolist())
         elif self.mode == CPU:
             raise Exception("Error")
-		
+
 
 		# takes action and moves to next state
         self.game.advance_action(skiprate)
@@ -189,7 +188,7 @@ class GDoomEnv(gym.Env):
             print(info)
             info = {}
             image_buffer = np.zeros(shape=self.observation_space.shape, dtype=np.uint8)
-            
+
         else:
             image_buffer = state.screen_buffer
             image_buffer = np.transpose(image_buffer.copy(), [1, 2, 0])
@@ -327,28 +326,28 @@ if __name__ == "__main__":
         #frame_from_action, r, dead, info = env_cpu.step(np.random.randint(0,(env_cpu.action_space.n)))
         #np_frame_from_action = np.asarray(frame_from_action)
         #print(np_frame_from_action.shape)
-        #plt.imshow(np_frame_from_action[:,:,0], cmap = 'gray') 
+        #plt.imshow(np_frame_from_action[:,:,0], cmap = 'gray')
         #plt.pause(0.01)
         #plt.draw()
-       
 
 
-        #plt.imsave("test4.png",np_frame_from_action[:,:,3])) 
+
+        #plt.imsave("test4.png",np_frame_from_action[:,:,3]))
         #env_cpu.action_space.n     number of actions possible
         #print(env_cpu.step(np.random.randint(0,(env_cpu.action_space.n))))
 
 
 
 
-    
-    
+
+
     #env_human = gym.make("doom_scenario2_human-v0")
     #frame = env_human.reset()
     #play(env_human, fps=32)
 
     #
     # # env2 = SetPlayingMode(target_mode=HUMAN)(env2)
-	    
+
     # # Make a CPU environemnt the good ol' way (not recommended, see __init__.py).
     # genv = WGDoomEnv(level=2, frame_size=89)
     # genv.reset()

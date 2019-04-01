@@ -4,8 +4,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn.functional as F
-import matplotlib
-matplotlib.use('TKAgg')   
 import matplotlib.pyplot as plt
 import cv2
 import utils
@@ -25,16 +23,16 @@ def train(env, policy,critic):
     optimizer_actor = optim.Adam(policy.parameters(), lr=0.0001) #update parameters
     optimizer_critic = optim.Adam(critic.parameters(),lr = 0.0001) #update parameters
     loss_lsq = torch.nn.MSELoss()
-    NLL = nn.NLLLoss(reduction='none') # cost 
+    NLL = nn.NLLLoss(reduction='none') # cost
 
     #optimiser = optim.Adam([
     #    {'params': policy.fc.parameters(), 'lr': 0.01},
     #], lr=0)
-    
+
 
     training_rewards, losses_actor , losses_critic = [], [], []
     print('Start training')
-    
+
     for epoch in range(num_epochs):
         batch = []
         s = env.reset()
@@ -42,10 +40,10 @@ def train(env, policy,critic):
         s = cropping(s)
         num_episode = 1
         states, actions, rewards_of_episode, rewards_of_batch, discounted_rewards = [], [], [], [], []
-        value_observations = [] 
+        value_observations = []
         masks = []
 
-        
+
 
         # build batch
         while True:
@@ -55,7 +53,7 @@ def train(env, policy,critic):
                 s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
                 a_prob = policy(s_tensor)  #calls forward function
                 estimated_value = critic(s_tensor)
-            
+
             #print(a_prob.numpy())
 
             a = (np.cumsum(np.exp(a_prob.numpy())) > np.random.rand()).argmax() # sample action
@@ -104,7 +102,7 @@ def train(env, policy,critic):
 
         s1 = torch.from_numpy(normalize(s1)).float().permute(2,0,1).view(1,4,64,64)
         next_value = critic(s1) #of last state of episode or of first state of next episode
-        target_values_critic = compute_returns_critic(next_value,rewards_of_batch,masks)
+        target_values_critic = compute_returns_critic(next_value.detach(),rewards_of_batch,masks)
         target_values_critic = torch.Tensor(target_values_critic).view(-1)
         target_values_critic = Variable(target_values_critic,requires_grad = True)
 
@@ -123,14 +121,14 @@ def train(env, policy,critic):
         optimizer_critic.step()
 
 
-        
+
         #advantages_tensor = torch.Tensor(advantages).view(-1)
 
         losses_actor.append(loss_actor.item())
         losses_critic.append(loss_critic.item())
 
 
-        
+
        # bookkeeping
         training_rewards.append(np.mean(rewards_of_batch))
 
@@ -146,11 +144,11 @@ def train(env, policy,critic):
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
-        
+
         if (epoch+1) % 50 == 0:
             #display_episode(np.array(states_human_size))
             format_frames = np.array(states_human_size)
-            imageio.mimwrite('videos/a2c_videos_scenario2_with_changes/training_a2c'+str(epoch+1)+'.mp4', format_frames[:,:,:,0], fps = 15)
+            imageio.mimwrite('videos/training_a2c'+str(epoch+1)+'.mp4', format_frames[:,:,:,0], fps = 15)
             #plt.figure(figsize = (10,10))
             #x = [i for i in range(0,50)]
             #plt.plot(training_loss)
@@ -189,34 +187,34 @@ def lenght_of_episodes(list_of_lists):
         lenghts = []
         for l in list_of_lists:
             lenghts.append((len(l)))
-        return lenghts    
+        return lenghts
 
 
 
 """
 def critic_target_values(batch_rewards,gamma = 0.99):
-    
+
     At each state, the target value is the sum of the rewards that were still obtained in the episode
     with discount factor gamma
-    Returns: 
+    Returns:
         - List of Lists containing the target values of the critc
         - List containing lenght of each episode in the batch
-    
 
-    batch_rewards_copy = [x[:] for x in batch_rewards] 
+
+    batch_rewards_copy = [x[:] for x in batch_rewards]
     episode_lenghts = []
 
     for episode in batch_rewards_copy:
         episode_lenghts.append(len(episode)) # keep track of how long untill agent dies
         for episode_reward in reversed(range(len(episode))):
             try:
-                episode[episode_reward] += (gamma * episode[episode_reward +1]) 
+                episode[episode_reward] += (gamma * episode[episode_reward +1])
 
             except IndexError:
-                episode[episode_reward -1]  += (gamma * episode[episode_reward]) 
+                episode[episode_reward -1]  += (gamma * episode[episode_reward])
                 episode[episode_reward] = 0
 
-    return batch_rewards_copy, episode_lenghts  
+    return batch_rewards_copy, episode_lenghts
 """
 
 def discount_and_normalize_rewards(episode_rewards, discount_factor):
