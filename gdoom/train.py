@@ -9,238 +9,144 @@ import cv2
 import utils
 import imageio
 import copy
+from buffer import Buffer
 
 """
 class Model:
 
     def __init__(self,policy,cric)
 """
+
+learning_rate = 0.0001
+num_epochs = 200
+batch_size = 512
+minibatch_size = 32
+
+PPO_EPSILON = 0.2
+CRITIC_BALANCE = 0.5
+
 def train(env, policy,critic):
 
-    num_epochs = 2000
-    batch_size = 10 # 1 epsiode only
-    discount_factor = 0.95 # reward discount factor (gamma), 1.0 = no discount
-    optimizer_actor = optim.Adam(policy.parameters(), lr=0.0001) #update parameters
-    optimizer_critic = optim.Adam(critic.parameters(),lr = 0.0001) #update parameters
+    optimizer_actor = optim.Adam(policy.parameters(), lr=learning_rate) #update parameters
+    optimizer_critic = optim.Adam(critic.parameters(),lr = learning_rate) #update parameters
+
     loss_lsq = torch.nn.MSELoss()
     NLL = nn.NLLLoss(reduction='none') # cost
-
-    #optimiser = optim.Adam([
-    #    {'params': policy.fc.parameters(), 'lr': 0.01},
-    #], lr=0)
-
 
     training_rewards, losses_actor , losses_critic = [], [], []
     print('Start training')
 
     for epoch in range(num_epochs):
-        batch = []
+
+        #first initialize env
+
         s = env.reset()
-        states_human_size = [s]
+        states_human_size = [s] #keep 640*640 frame for display purpose
         s = cropping(s)
         num_episode = 1
-        states, actions, rewards_of_episode, rewards_of_batch, discounted_rewards = [], [], [], [], []
-        value_observations = []
-        masks = []
 
-
+        #create empty buffer
+        batch_buffer = Buffer(batch_size, minibatch_size)
+        rewards_of_episode = []
 
         # build batch
-        while True:
+        for idx_in_batch in range(batch_size):
             # generate rollout by iteratively evaluating the current policy on the environment
             with torch.no_grad():
 
                 s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
-                a_prob = policy(s_tensor)  #calls forward function
+                a_log_probs = policy(s_tensor)  #calls forward function
                 estimated_value = critic(s_tensor)
 
             #print(a_prob.numpy())
 
-            a = (np.cumsum(np.exp(a_prob.numpy())) > np.random.rand()).argmax() # sample action
+            a = (np.cumsum(np.exp(a_log_probs.numpy())) > np.random.rand()).argmax() # sample action
             s1, r, done, info = env.step(int(a)) #s1 comes in 640x640x4
             states_human_size.append(np.asarray(s1))
             s1 = cropping(s1)
-            states.append(s)
-            actions.append(a)
-            rewards_of_episode.append(r)
-            value_observations.append(estimated_value) #y's of critic
+            batch_buffer.states.append(s)
+            batch_buffer.actions.append(a)
+            batch_buffer.a_log_probs.append(a_log_probs.numpy())
+            batch_buffer.rewards_of_batch.append(r)
+            batch_buffer.value_observations.append(estimated_value) #y's of critic
 
             if not done:
-                masks.append(1)
+                batch_buffer.masks.append(1)
 
             if done:
-                rewards_of_batch.append(rewards_of_episode)
-                masks.append(0)
-                # isn't this just making the final rewards of an episode go small, this should be for each time step
-                discounted_rewards.append(discount_and_normalize_rewards(rewards_of_episode, discount_factor))
-                #value_observations_discounted.append(discount_and_normalize_rewards(value_observations,discount_factor))
-                if len(np.concatenate(rewards_of_batch)) > batch_size:
-                    break
-
+                batch_buffer.masks.append(0)
                 rewards_of_episode = []
                 num_episode += 1
-
                 s = cropping(env.reset())
             else:
                 s = s1
 
+        s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
+        next_value = critic(s_tensor)
+        batch_buffer.next_value = next_value
         # prepare batch
-        states = np.stack(np.array(states))
-        actions = np.stack(np.array(actions))
-        actions = actions.astype(np.int64)
-        len_episodes_batch = lenght_of_episodes(rewards_of_batch)
-        rewards_of_batch = np.concatenate(rewards_of_batch)
-        actual_batch_size = states.shape[0] #can be different from batch size as episode length is not constant
-        states_batch = torch.from_numpy(normalize(states)).float().permute(0,3,2,1)
-        a_log_probs = policy(states_batch)
+        batch_buffer.prepare_batch()
 
-        #observed values of critic
-        observed_values_critic = np.stack(np.array(value_observations))
-        observed_values_critic = np.concatenate(value_observations)
-        observed_values_critic  = torch.Tensor(observed_values_critic).view(-1)
-        observed_values_critic = Variable(observed_values_critic,requires_grad = True)
+        for states, actions, log_prob_old, advantages, returns in batch_buffer:
+            a_log_probs = policy(states.permute(0,3,1,2)) # permute because of channel first in pytorch conv layer
+            values = critic(states.permute(0,3,1,2))
 
-        s1 = torch.from_numpy(normalize(s1)).float().permute(2,0,1).view(1,4,64,64)
-        next_value = critic(s1) #of last state of episode or of first state of next episode
-        target_values_critic = compute_returns_critic(next_value.detach(),rewards_of_batch,masks)
-        target_values_critic = torch.Tensor(target_values_critic).view(-1)
-        target_values_critic = Variable(target_values_critic,requires_grad = True)
+            log_likelihood_new = NLL(a_log_probs, torch.LongTensor(actions))
+            log_likelihood_old = NLL(log_prob_old.view(minibatch_size, -1), torch.LongTensor(actions))
 
-        advantage = target_values_critic - observed_values_critic
-        log_likelihood = NLL(a_log_probs, torch.LongTensor(actions))
+            optimizer_actor.zero_grad()
+            optimizer_critic.zero_grad()
 
-        optimizer_actor.zero_grad()
-        optimizer_critic.zero_grad()
+            advantages = Variable(advantages, requires_grad=True)
 
-        loss_actor = torch.sum(advantage.detach()*(log_likelihood)) #mean vs sum
-        loss_critic = torch.sum(advantage.pow(2))
+            # A2C losses
+            # loss_actor = torch.sum(advantages.detach()*(log_likelihood)) #mean vs sum
+            # loss_critic = torch.sum(advantages.pow(2))
 
-        loss_actor.backward()
-        loss_critic.backward()
-        optimizer_actor.step()
-        optimizer_critic.step()
+            #PPO losses
+            prob_ratio = torch.exp(log_likelihood_old - log_likelihood_new) #opposite sign cause computed by NLL
+            surrogate_objective = prob_ratio * advantages
+            surrogate_objective_clipped = torch.clamp(prob_ratio, 1.0 -PPO_EPSILON, 1.0 + PPO_EPSILON) * advantages
+
+            loss_actor = - torch.min(surrogate_objective, surrogate_objective_clipped).mean()
+            loss_critic = (returns - values).pow(2).mean()
+
+            loss = loss_actor + CRITIC_BALANCE * loss_critic
+
+            # loss_actor.backward()
+            # loss_critic.backward()
+
+            loss.backward()
+
+            optimizer_actor.step()
+            optimizer_critic.step()
 
 
-
-        #advantages_tensor = torch.Tensor(advantages).view(-1)
-
-        losses_actor.append(loss_actor.item())
-        losses_critic.append(loss_critic.item())
+            losses_actor.append(loss_actor.item())
+            losses_critic.append(loss_critic.item())
 
 
 
-       # bookkeeping
-        training_rewards.append(np.mean(rewards_of_batch))
+           # bookkeeping
 
         print("==========================================")
         print("Epoch: ", epoch, "/", num_epochs)
         print("-----------")
         print("Number of training episodes: {}".format(num_episode))
-        print("Average Lenght of Episode: {}".format(np.mean(len_episodes_batch)))
-        print(len_episodes_batch)
-        print("Total reward: {0:.2f}".format(np.sum(rewards_of_batch)))
-        print("Mean Reward of that batch {0:.2f}".format(np.mean(rewards_of_batch)))
+        print("Total reward: {0:.2f}".format(batch_buffer.rewards_of_batch.sum()))
+        print("Mean Reward of that batch {0:.2f}".format(batch_buffer.rewards_of_batch.mean()))
         print("Training Loss for Actor: {0:.2f}".format(loss_actor.item()))
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
 
         if (epoch+1) % 50 == 0:
-            #display_episode(np.array(states_human_size))
             format_frames = np.array(states_human_size)
             imageio.mimwrite('videos/training_a2c'+str(epoch+1)+'.mp4', format_frames[:,:,:,0], fps = 15)
-            #plt.figure(figsize = (10,10))
-            #x = [i for i in range(0,50)]
-            #plt.plot(training_loss)
-            #plt.show()
+
 
 
     print('done')
-
-
-def make_list_sigmoid(lista):
-
-    for i in range(len(lista)):
-        lista[i] = (1/(1+np.exp(-lista[i])))
-    return lista
-
-def deep_copy(x):
-    return [y[:] for y in x]
-
-# https://github.com/yc930401/Actor-Critic-pytorch/blob/master/Actor-Critic.py
-def compute_returns_critic(next_value, rewards, masks, gamma=0.99):
-    """
-    Batch should only contain one episdoe to use this approach
-    """
-    R = next_value
-    returns = []
-    for step in reversed(range(len(rewards))):
-        R = rewards[step] + gamma * R * masks[step]
-        returns.insert(0, R)
-    return returns
-
-def lenght_of_episodes(list_of_lists):
-
-    if list_of_lists[0] is int:
-        return len(list_of_lists)
-    else:
-        lenghts = []
-        for l in list_of_lists:
-            lenghts.append((len(l)))
-        return lenghts
-
-
-
-"""
-def critic_target_values(batch_rewards,gamma = 0.99):
-
-    At each state, the target value is the sum of the rewards that were still obtained in the episode
-    with discount factor gamma
-    Returns:
-        - List of Lists containing the target values of the critc
-        - List containing lenght of each episode in the batch
-
-
-    batch_rewards_copy = [x[:] for x in batch_rewards]
-    episode_lenghts = []
-
-    for episode in batch_rewards_copy:
-        episode_lenghts.append(len(episode)) # keep track of how long untill agent dies
-        for episode_reward in reversed(range(len(episode))):
-            try:
-                episode[episode_reward] += (gamma * episode[episode_reward +1])
-
-            except IndexError:
-                episode[episode_reward -1]  += (gamma * episode[episode_reward])
-                episode[episode_reward] = 0
-
-    return batch_rewards_copy, episode_lenghts
-"""
-
-def discount_and_normalize_rewards(episode_rewards, discount_factor):
-    discounted_episode_rewards = np.zeros_like(episode_rewards)
-    cumulative = 0.0
-    for i in reversed(range(len(episode_rewards))):
-        cumulative = cumulative * discount_factor + episode_rewards[i]
-        discounted_episode_rewards[i] = cumulative
-
-    mean = np.mean(discounted_episode_rewards)
-    std = np.std(discounted_episode_rewards)
-    # print(discounted_episode_rewards)
-    discounted_episode_rewards = (discounted_episode_rewards - mean) / (std)
-    # print(discounted_episode_rewards)
-    return discounted_episode_rewards
-
-
-#def save_model():
-
-def normalise_list (l,max_intensity):
-
-    max= np.max(l)
-
-    l = (l/max_value) * max_intensity
-
-    return l
 
 
 def normalize(img):
@@ -250,13 +156,3 @@ def cropping(s):
     frame = np.asarray(s)
     frame = cv2.resize(frame, (64,64))
     return frame
-
-def display_episode(frames):
-    img = None
-    for frame in frames[:,:,:,0]:
-        if img==None:
-            img = plt.imshow(np.asarray(frame), cmap='gray')
-        else:
-            img.set_data(np.asarray(frame))
-        plt.pause(0.00001)
-        plt.draw()

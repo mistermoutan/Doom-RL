@@ -1,8 +1,8 @@
 from gym.utils.play import play
 import numpy as np
 from gdoom_env import *
-from network import PolicyNet 
-from network import CriticNet 
+from network import PolicyNet
+from network import CriticNet
 from train import train
 import matplotlib
 
@@ -38,8 +38,8 @@ frame = env.reset()
 
 n_inputs = env.observation_space.shape[0]**2*4
 n_hidden = 256
-learning_rate = 0.00005
 n_outputs = env.action_space.n
+
 
 policy = PolicyNet(env.action_space.n)
 critic = CriticNet()
