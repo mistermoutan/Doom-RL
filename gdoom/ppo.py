@@ -1,11 +1,10 @@
 from gym.utils.play import play
 import numpy as np
 from gdoom_env import *
-from network import PolicyNet
-from network import CriticNet
+from network import ActorCriticNet
 from train import train
 import matplotlib
-
+matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import torch
 
@@ -40,11 +39,10 @@ n_inputs = env.observation_space.shape[0]**2*4
 n_hidden = 256
 n_outputs = env.action_space.n
 
-policy = PolicyNet(env.action_space.n)
-critic = CriticNet()
+actorCritic = ActorCriticNet(env.action_space.n)
 
 
 ################
 # Train policy #
 ################
-train(env, policy,critic)
+train(env, actorCritic)

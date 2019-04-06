@@ -18,31 +18,30 @@ class Model:
     def __init__(self,policy,cric)
 """
 
-lr_actor = 1e-5
-lr_critic = 1e-4
+learning_rate = 5e-5
 num_epochs = 500
-batch_size = 256
+batch_size = 512
 minibatch_size = 64
 
 PPO_EPSILON = 0.2
-CRITIC_BALANCE = 0.3
-ENTROPY_BETA = 0.001
+CRITIC_BALANCE = 1.0
+ENTROPY_BETA = 0.01
 
 cuda = torch.cuda.is_available()
 device = "cuda:0" if cuda else "cpu"
 
-def train(env, policy,critic):
+def train(env, actorCritic):
 
-    optimizer_actor = optim.Adam(policy.parameters(), lr=lr_actor) #update parameters
-    optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) #update parameters
+    optimizer= optim.Adam(actorCritic.parameters(), lr=learning_rate) #update parameters
 
-    policy = policy.to(device)
-    critic = critic.to(device)
+
+    actorCritic = actorCritic.to(device)
+
 
     loss_lsq = torch.nn.MSELoss()
     NLL = nn.NLLLoss(reduction='none') # cost
-
-    training_rewards, losses_actor , losses_critic = [], [], []
+    max_reward = -1e8
+    training_rewards, losses_critic, losses_actor = [], [], []
     print('Start training')
 
     for epoch in range(num_epochs):
@@ -65,12 +64,12 @@ def train(env, policy,critic):
 
                 s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
                 s_tensor = s_tensor.to(device)
-                a_log_probs = policy(s_tensor)  #calls forward function
-                estimated_value = critic(s_tensor)
+                a_log_probs, estimated_value, dist = actorCritic(s_tensor)  #calls forward function
+
 
             #print(a_prob.numpy())
 
-            a = (np.cumsum(np.exp(a_log_probs.cpu().numpy())) > np.random.rand()).argmax() # sample action
+            a = dist.sample()
             s1, r, done, info = env.step(int(a)) #s1 comes in 640x640x4
             states_human_size.append(np.asarray(s1))
             s1 = cropping(s1)
@@ -93,21 +92,20 @@ def train(env, policy,critic):
 
         s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
         s_tensor = s_tensor.to(device)
-        next_value = critic(s_tensor)
+        _, next_value, _ = actorCritic(s_tensor)
         batch_buffer.next_value = next_value
         # prepare batch
         batch_buffer.prepare_batch()
 
         for states, actions, log_prob_old, advantages, returns in batch_buffer:
             states = states.to(device)
-            a_log_probs = policy(states.permute(0,3,1,2)) # permute because of channel first in pytorch conv layer
-            values = critic(states.permute(0,3,1,2))
-            print(actions)
+            a_log_probs, values, dists = actorCritic(states.permute(0,3,1,2)) # permute because of channel first in pytorch conv layer
+
             log_likelihood_new = NLL(a_log_probs, torch.LongTensor(actions).to(device))
             log_likelihood_old = NLL(log_prob_old.view(minibatch_size, -1).to(device), torch.LongTensor(actions).to(device))
 
-            optimizer_actor.zero_grad()
-            optimizer_critic.zero_grad()
+            optimizer.zero_grad()
+
 
             advantages = Variable(advantages, requires_grad=True).to(device)
 
@@ -118,23 +116,22 @@ def train(env, policy,critic):
             #PPO losses
             prob_ratio = torch.exp(log_likelihood_old - log_likelihood_new) #opposite sign cause computed by NLL
             surrogate_objective = prob_ratio * advantages
-            surrogate_objective_clipped = torch.clamp(prob_ratio, 0.98 - PPO_EPSILON, 1.02 + PPO_EPSILON) * advantages
+            surrogate_objective_clipped = torch.clamp(prob_ratio, 1.0 - PPO_EPSILON, 1.0 + PPO_EPSILON) * advantages
 
-            entropy = torch.exp(a_log_probs) * a_log_probs
+            entropy = dists.entropy().mean()
 
             loss_actor = - torch.min(surrogate_objective, surrogate_objective_clipped).mean()
             advantages_new = returns.to(device) - values.view(-1)
             loss_critic = advantages_new.pow(2).mean()
 
-            loss = loss_actor + CRITIC_BALANCE * loss_critic + ENTROPY_BETA * entropy.mean()
+            loss = loss_actor + CRITIC_BALANCE * loss_critic - ENTROPY_BETA * entropy
 
             # loss_actor.backward()
             # loss_critic.backward()
 
             loss.backward()
 
-            optimizer_actor.step()
-            optimizer_critic.step()
+            optimizer.step()
 
 
             losses_actor.append(loss_actor.item())
@@ -144,11 +141,15 @@ def train(env, policy,critic):
 
            # bookkeeping
 
+        total_reward = batch_buffer.rewards_of_batch.sum()
+        if max_reward < total_reward:
+            max_reward = total_reward
         print("==========================================")
         print("Epoch: ", epoch, "/", num_epochs)
         print("-----------")
         print("Number of training episodes: {}".format(num_episode))
-        print("Total reward: {0:.2f}".format(batch_buffer.rewards_of_batch.sum()))
+        print("Total reward: {0:.2f}".format(total_reward))
+        print("Max reward so far: {0:.2f}".format(max_reward))
         print("Mean Reward of that batch {0:.2f}".format(batch_buffer.rewards_of_batch.mean()))
         print("Training Loss for Actor: {0:.2f}".format(loss_actor.item()))
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))

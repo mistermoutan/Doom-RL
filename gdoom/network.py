@@ -1,96 +1,65 @@
-import numpy as np
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.autograd import Variable
+from torch.distributions.categorical import Categorical
 import matplotlib
-matplotlib.use('TKAgg')
-import matplotlib.pyplot as plt
-import cv2
-import utils
-import imageio
+matplotlib.use('TkAgg')
 
-class PolicyNet(nn.Module):
+
+
+
+class ActorCriticNet(nn.Module):
     """Policy network"""
 
     def __init__(self,n_actions):
-        super(PolicyNet, self).__init__()
+        super(ActorCriticNet, self).__init__()
+
+        self.n_actions = n_actions
+
+        cuda = torch.cuda.is_available()
+        self.device = "cuda:0" if cuda else "cpu"
+
         self.conv1 = nn.Sequential(
             nn.Conv2d(4, 32, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm2d(32),
-            nn.ELU())
+            nn.ReLU())
         self.conv2 = nn.Sequential(
             nn.Conv2d(32, 64, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm2d(64),
-            nn.ELU())
-        #self.conv3 = nn.Sequential(
-        #    nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2),
-        #    nn.BatchNorm2d(128),
-        #    nn.ELU())
-        self.fc1 = nn.Sequential(
-            nn.Linear(16*16*64, 512),
-            nn.ELU())
-        self.fc2 = nn.Sequential(
-            nn.Linear(512, 256),
-            nn.ELU())
-        self.fc3 = nn.Sequential(
-            nn.Linear(256, n_actions),
-            nn.ELU())
+            nn.ReLU())
+        self.conv3 = nn.Sequential(
+           nn.Conv2d(64, 64, kernel_size=5, stride=2, padding=2),
+           nn.BatchNorm2d(64),
+           nn.ReLU())
+
+        self.actor = nn.Sequential(nn.Linear(8*8*64, 512),
+                                   nn.ReLU(),
+                                   nn.Linear(512, 256),
+                                   nn.ReLU(),
+                                   nn.Linear(256, n_actions))
+
+        self.critic = nn.Sequential(nn.Linear(8*8*64, 512),
+                                   nn.ReLU(),
+                                   nn.Linear(512, 256),
+                                   nn.ReLU(),
+                                   nn.Linear(256, 1))
 
 
 
     def forward(self, x):
+        batch_size = x.shape[0]
         x = self.conv1(x)
         x = self.conv2(x)
-        #print("End of conv ", x.shape)
-        #x = self.conv3(x)
-        x = x.view(x.shape[0], -1)
-        x = self.fc1(x)
-        x = self.fc2(x)
-        x = self.fc3(x)
-        #print(x)
-        #print(nn.Softmax(dim=-1)(x))
-        #print(nn.LogSoftmax(dim=-1)(x))
-        return nn.LogSoftmax(dim=-1)(x)
+        x = self.conv3(x)
+        x = x.view(batch_size, -1)
 
+        probs = self.actor(x)
+        probs = nn.Softmax(dim=-1)(probs)
+        dist = Categorical(probs)
 
-class CriticNet(nn.Module):
-    """Critic network"""
-
-    def __init__(self):
-        super(CriticNet, self).__init__()
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=5, stride=2, padding=2),
-            nn.BatchNorm2d(32),
-            nn.ELU())
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=5, stride=2, padding=2),
-            nn.BatchNorm2d(64),
-            nn.ELU())
-        #self.conv3 = nn.Sequential(
-        #    nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2),
-        #    nn.BatchNorm2d(128),
-        #    nn.ELU())
-        self.fc1 = nn.Sequential(
-            nn.Linear(16*16*64, 512),
-            nn.ELU())
-        self.fc2 = nn.Sequential(
-            nn.Linear(512, 256),
-            nn.ELU())
-        self.fc3 = nn.Sequential(
-            nn.Linear(256, 1))
-            #nn.Sigmoid()) #benchmark
-
-
-    def forward(self, x):
-
-        x = self.conv1(x)
-        x = self.conv2(x)
-        #x = self.conv3(x)
-        x = x.view(x.shape[0], -1)
-        x = self.fc1(x)
-        x = self.fc2(x)
-        x = self.fc3(x)
-
-        return x
+        value = self.critic(x)
+        mask_log_prob = torch.Tensor(np.arange(self.n_actions)).repeat(batch_size,1).to(self.device)
+        mask_log_prob = mask_log_prob.permute(1,0)
+        return dist.log_prob(mask_log_prob).permute(1,0), value, dist
