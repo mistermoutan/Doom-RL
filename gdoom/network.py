@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
 import matplotlib
-matplotlib.use('TKAgg')   
+matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
 import cv2
 import utils
@@ -58,7 +58,7 @@ class PolicyNet(nn.Module):
 class CriticNet(nn.Module):
     """Critic network"""
 
-    def __init__(self):    
+    def __init__(self):
         super(CriticNet, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(4, 32, kernel_size=5, stride=2, padding=2),
@@ -84,7 +84,7 @@ class CriticNet(nn.Module):
 
 
     def forward(self, x):
-        
+
         x = self.conv1(x)
         x = self.conv2(x)
         #x = self.conv3(x)
@@ -94,4 +94,3 @@ class CriticNet(nn.Module):
         x = self.fc3(x)
 
         return x
-

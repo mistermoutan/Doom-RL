@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 GAMMA = 0.99 # reward discount factor (gamma), 1.0 = no discount
-GAE_LAMBDA = 0.95
+GAE_LAMBDA = 0.99
 
 class Buffer:
     def __init__(self, batch_size, minibatch_size):

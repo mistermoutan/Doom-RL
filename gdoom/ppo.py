@@ -40,7 +40,6 @@ n_inputs = env.observation_space.shape[0]**2*4
 n_hidden = 256
 n_outputs = env.action_space.n
 
-
 policy = PolicyNet(env.action_space.n)
 critic = CriticNet()
 
