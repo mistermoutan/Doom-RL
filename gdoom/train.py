@@ -21,7 +21,7 @@ class Model:
 lr_actor = 1e-5
 lr_critic = 1e-4
 num_epochs = 500
-batch_size = 256
+batch_size = 512
 minibatch_size = 64
 
 PPO_EPSILON = 0.2
@@ -35,6 +35,10 @@ def train(env, policy,critic):
 
     optimizer_actor = optim.Adam(policy.parameters(), lr=lr_actor) #update parameters
     optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) #update parameters
+
+    lambda_lr = lambda epoch: 0.995**epoch
+    scheduler_actor = torch.optim.lr_scheduler.LambdaLR(optimizer_actor, lr_lambda=lambda_lr)
+    scheduler_critic = torch.optim.lr_scheduler.LambdaLR(optimizer_critic, lr_lambda=lambda_lr)
 
     policy = policy.to(device)
     critic = critic.to(device)
@@ -120,13 +124,13 @@ def train(env, policy,critic):
             surrogate_objective = prob_ratio * advantages
             surrogate_objective_clipped = torch.clamp(prob_ratio, 0.98 - PPO_EPSILON, 1.02 + PPO_EPSILON) * advantages
 
-            entropy = torch.exp(a_log_probs) * a_log_probs
+            entropy = - torch.exp(a_log_probs) * a_log_probs
 
             loss_actor = - torch.min(surrogate_objective, surrogate_objective_clipped).mean()
             advantages_new = returns.to(device) - values.view(-1)
             loss_critic = advantages_new.pow(2).mean()
 
-            loss = loss_actor + CRITIC_BALANCE * loss_critic + ENTROPY_BETA * entropy.mean()
+            loss = loss_actor + CRITIC_BALANCE * loss_critic - ENTROPY_BETA * entropy.mean()
 
             # loss_actor.backward()
             # loss_critic.backward()
@@ -135,7 +139,8 @@ def train(env, policy,critic):
 
             optimizer_actor.step()
             optimizer_critic.step()
-
+            scheduler_actor.step()
+            scheduler_critic.step()
 
             losses_actor.append(loss_actor.item())
             losses_critic.append(loss_critic.item())
