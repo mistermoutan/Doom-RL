@@ -18,14 +18,14 @@ class Model:
     def __init__(self,policy,cric)
 """
 
-lr_actor = 1e-5
+lr_actor = 1e-4
 lr_critic = 1e-4
 num_epochs = 500
 batch_size = 512
 minibatch_size = 64
 
 PPO_EPSILON = 0.2
-CRITIC_BALANCE = 0.3
+CRITIC_BALANCE = 0.5
 ENTROPY_BETA = 0.001
 
 LR_DECAY = 0.995

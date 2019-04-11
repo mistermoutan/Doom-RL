@@ -219,6 +219,8 @@ class GDoomEnv(gym.Env):
         return 0
     def shape_reward(self, r_t, misc, prev_misc, t=None):
         # Check any kill count
+
+        r_t = 0
         if (misc[0] > prev_misc[0]):
             r_t = r_t + 1
 
