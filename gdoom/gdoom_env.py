@@ -248,6 +248,9 @@ class GDoomEnv(gym.Env):
         # image_buffer = np.transpose(image_buffer, [2, 1, 0])
         return np.transpose(image_buffer.copy(), [1, 2, 0])
 
+    def getState(self):
+        return self.game.get_state().screen_buffer
+
 
 from gdoom.wrappers.gdoom_wrappers import SetPlayingMode
 from gdoom.wrappers.gdoom_wrappers import GRewardScaler, GPreprocessFrame
