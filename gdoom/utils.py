@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt 
+
 def random_policy_human():
 
 
@@ -23,3 +25,8 @@ def random_policy_human():
         # and returns the observation of the environment,
         # the reward, if the env is over, and other info.
         frame, _, _, _ =env_human.step(action)
+
+def plotRewards(rewards):
+    plt.figure()
+    plt.plot([x for x in range(len(rewards))], rewards, '-')
+    plt.show()
