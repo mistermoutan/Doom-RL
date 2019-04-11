@@ -27,3 +27,5 @@ each group should have three entries. make sure to include your group name
 
   - State of the Art Control of Atari GamesUsing Shallow Reinforcement Learning [here](http://www.ifaamas.org/Proceedings/aamas2016/pdfs/p485.pdf) (Leszy)
 
+  -Good summary of "Deep Reinforcement Learning" by Intel, with some hint about implementation. https://www.intel.ai/demystifying-deep-reinforcement-learning/#gs.1v5q6o (Attila)
+

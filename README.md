@@ -121,4 +121,3 @@ Note the plugin right now miss a feature to record frames (at the very least, I 
 ## FAQ
  - *We'd rather work on Mujoco/sonic/atari/etc.etc.* 
   And you should! Later! The idea of this project is that if we all work on the same problem, we can compare our results. This will allow everyone to learn something about the relative benefits/drawbacks of the other methods. So Doom it is.
- 

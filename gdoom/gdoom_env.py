@@ -297,7 +297,6 @@ def make_env(level=0, frame_size=96):
 class WGDoomEnv(GDoomEnv):
     pass
 
-
 if __name__ == "__main__":
     print("GDoomEnv called")
     from gym.utils.play import play
