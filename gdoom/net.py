@@ -26,10 +26,10 @@ class DeepQNet(nn.Module):
             nn.ELU())
         self.fc1 = nn.Sequential(
             nn.Linear(8*16*64, 512),
-            nn.ELU())
+            nn.ReLU())
         self.fc2 = nn.Sequential(
             nn.Linear(512, nbrActions),
-            nn.ELU())
+            nn.ReLU())
         
     def forward(self, x):
         x = self.conv1(x)

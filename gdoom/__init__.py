@@ -18,4 +18,3 @@ for i in range(8):
         entry_point='gdoom:WGDoomEnv',
         kwargs={'level': i, 'mode': gdoom_env.HUMAN}
     )
-    a = 234

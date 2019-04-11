@@ -19,7 +19,7 @@ import torch
 genv = WGDoomEnv(level=1, frame_size=640)
 
 # Also make a GPU environment, but using openai:
-env = gym.make("doom_scenario4_640-v0")
+env = gym.make("doom_scenario2_640-v0")
 frame = env.reset()
 
 #########################################################################################################
@@ -36,13 +36,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Get number of actions from gym action space
 n_actions = env.action_space.n
 
-memory = ReplayMemory(10000)
+memory = ReplayMemory(50000)
+
+# Initialize memory with 1000 random states
 
 trainer = Trainer(env, device, n_actions, memory)
 
 ################
 # Train policy #
 ################
+trainer.preTrainMemory()
+print('---Done Pre Training---')
 trainer.train()
 
 # Saving
