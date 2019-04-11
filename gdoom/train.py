@@ -28,6 +28,10 @@ PPO_EPSILON = 0.2
 CRITIC_BALANCE = 0.3
 ENTROPY_BETA = 0.001
 
+LR_DECAY = 0.995
+
+
+
 cuda = torch.cuda.is_available()
 device = "cuda:0" if cuda else "cpu"
 
@@ -36,12 +40,14 @@ def train(env, policy,critic):
     optimizer_actor = optim.Adam(policy.parameters(), lr=lr_actor) #update parameters
     optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) #update parameters
 
-    lambda_lr = lambda epoch: 0.995**epoch
+    lambda_lr = lambda epoch: LR_DECAY**epoch
     scheduler_actor = torch.optim.lr_scheduler.LambdaLR(optimizer_actor, lr_lambda=lambda_lr)
     scheduler_critic = torch.optim.lr_scheduler.LambdaLR(optimizer_critic, lr_lambda=lambda_lr)
 
     policy = policy.to(device)
     critic = critic.to(device)
+
+    max_reward = -1e8
 
     loss_lsq = torch.nn.MSELoss()
     NLL = nn.NLLLoss(reduction='none') # cost
@@ -106,7 +112,6 @@ def train(env, policy,critic):
             states = states.to(device)
             a_log_probs = policy(states.permute(0,3,1,2)) # permute because of channel first in pytorch conv layer
             values = critic(states.permute(0,3,1,2))
-            print(actions)
             log_likelihood_new = NLL(a_log_probs, torch.LongTensor(actions).to(device))
             log_likelihood_old = NLL(log_prob_old.view(minibatch_size, -1).to(device), torch.LongTensor(actions).to(device))
 
@@ -139,8 +144,8 @@ def train(env, policy,critic):
 
             optimizer_actor.step()
             optimizer_critic.step()
-            scheduler_actor.step()
-            scheduler_critic.step()
+            # scheduler_actor.step()
+            # scheduler_critic.step()
 
             losses_actor.append(loss_actor.item())
             losses_critic.append(loss_critic.item())
@@ -148,21 +153,23 @@ def train(env, policy,critic):
 
 
            # bookkeeping
+        total_reward = batch_buffer.rewards_of_batch.sum()
+        if max_reward < total_reward:
+            max_reward = total_reward
+            format_frames = np.array(states_human_size)
+            imageio.mimwrite('videos/training_ppo_reward'+str(int(max_reward))+'.mp4', format_frames[:,:,:,0], fps = 15)
 
         print("==========================================")
         print("Epoch: ", epoch, "/", num_epochs)
         print("-----------")
         print("Number of training episodes: {}".format(num_episode))
-        print("Total reward: {0:.2f}".format(batch_buffer.rewards_of_batch.sum()))
+        print("Total reward: {0:.2f}".format(total_reward))
+        print("Max reward so far: {0:.2f}".format(max_reward))
         print("Mean Reward of that batch {0:.2f}".format(batch_buffer.rewards_of_batch.mean()))
         print("Training Loss for Actor: {0:.2f}".format(loss_actor.item()))
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
-
-        if (epoch+1) % 10 == 0:
-            format_frames = np.array(states_human_size)
-            imageio.mimwrite('videos/training_ppo'+str(epoch+1)+'.mp4', format_frames[:,:,:,0], fps = 15)
 
 
 
