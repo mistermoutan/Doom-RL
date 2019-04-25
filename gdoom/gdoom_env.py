@@ -342,9 +342,9 @@ if __name__ == "__main__":
 
     
     
-    #env_human = gym.make("doom_scenario2_human-v0")
+    env_human = gym.make("doom_scenario7_human-v0")
     #frame = env_human.reset()
-    #play(env_human, fps=32)
+    play(env_human, fps=32)
 
     #
     # # env2 = SetPlayingMode(target_mode=HUMAN)(env2)

@@ -76,3 +76,5 @@ def compute_returns(next_value, rewards, masks, gamma=0.99):
         R = rewards[step] + gamma * R * masks[step]
         returns.insert(0, R)
     return returns
+
+print(compute_returns([r]))

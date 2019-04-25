@@ -11,16 +11,22 @@ import cv2
 import utils
 import imageio
 import copy
+from statistics import Statistics
 
 """
 class Model:
 
     def __init__(self,policy,cric)
 """
-def train(env, policy,critic):
+def train_a2c(a2c):
 
+    env = a2c.env
+    policy = a2c.policy
+    critic = a2c.critic
     num_epochs = 2000
-    batch_size = 10 # 1 epsiode only
+    statistics = Statistics(scenario = a2c.env_string, method = a2c.method, epochs = num_epochs)
+
+    batch_size = 10 # 1 episode only
     discount_factor = 0.95 # reward discount factor (gamma), 1.0 = no discount
     optimizer_actor = optim.Adam(policy.parameters(), lr=0.0001) #update parameters
     optimizer_critic = optim.Adam(critic.parameters(),lr = 0.0001) #update parameters
@@ -30,7 +36,6 @@ def train(env, policy,critic):
     #optimiser = optim.Adam([
     #    {'params': policy.fc.parameters(), 'lr': 0.01},
     #], lr=0)
-    
 
     training_rewards, losses_actor , losses_critic = [], [], []
     print('Start training')
@@ -46,7 +51,6 @@ def train(env, policy,critic):
         masks = []
 
         
-
         # build batch
         while True:
             # generate rollout by iteratively evaluating the current policy on the environment
@@ -55,6 +59,7 @@ def train(env, policy,critic):
                 s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
                 a_prob = policy(s_tensor)  #calls forward function
                 estimated_value = critic(s_tensor)
+                print(a_prob)
             
             #print(a_prob.numpy())
 
@@ -66,6 +71,9 @@ def train(env, policy,critic):
             actions.append(a)
             rewards_of_episode.append(r)
             value_observations.append(estimated_value) #y's of critic
+
+            statistics.action_taken.append(a)
+            statistics.rewards.append(r)
 
             if not done:
                 masks.append(1)
@@ -95,6 +103,7 @@ def train(env, policy,critic):
         actual_batch_size = states.shape[0] #can be different from batch size as episode length is not constant
         states_batch = torch.from_numpy(normalize(states)).float().permute(0,3,2,1)
         a_log_probs = policy(states_batch)
+        print(a_log_probs)
 
         #observed values of critic
         observed_values_critic = np.stack(np.array(value_observations))
@@ -122,8 +131,6 @@ def train(env, policy,critic):
         optimizer_actor.step()
         optimizer_critic.step()
 
-
-        
         #advantages_tensor = torch.Tensor(advantages).view(-1)
 
         losses_actor.append(loss_actor.item())
@@ -131,7 +138,7 @@ def train(env, policy,critic):
 
 
         
-       # bookkeeping
+        # bookkeeping
         training_rewards.append(np.mean(rewards_of_batch))
 
         print("==========================================")
@@ -150,11 +157,15 @@ def train(env, policy,critic):
         if (epoch+1) % 50 == 0:
             #display_episode(np.array(states_human_size))
             format_frames = np.array(states_human_size)
-            imageio.mimwrite('videos/a2c_videos_scenario2_with_changes/training_a2c'+str(epoch+1)+'.mp4', format_frames[:,:,:,0], fps = 15)
+            imageio.mimwrite('videos/a2c_videos_scenario7/training_a2c'+str(epoch+1)+'.mp4', format_frames[:,:,:,0], fps = 15)
             #plt.figure(figsize = (10,10))
             #x = [i for i in range(0,50)]
             #plt.plot(training_loss)
             #plt.show()
+            # keep track of changing porbabilities of each actions (line charts) 
+            # chart of rewards
+            # charts of t
+            # log file for statistics: scenario
 
 
     print('done')
