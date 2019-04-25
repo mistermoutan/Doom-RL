@@ -24,18 +24,18 @@ class PolicyNet(nn.Module):
             nn.Conv2d(32, 64, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm2d(64),
             nn.ELU())
-        #self.conv3 = nn.Sequential(
-        #    nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2),
-        #    nn.BatchNorm2d(128),
-        #    nn.ELU())
+        self.conv3 = nn.Sequential(
+           nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2),
+           nn.BatchNorm2d(128),
+           nn.ELU())
         self.fc1 = nn.Sequential(
             nn.Linear(16*16*64, 512),
             nn.ELU())
         self.fc2 = nn.Sequential(
-            nn.Linear(512, 256),
+            nn.Linear(512, 512),
             nn.ELU())
         self.fc3 = nn.Sequential(
-            nn.Linear(256, n_actions),
+            nn.Linear(512, n_actions),
             nn.ELU())
 
 

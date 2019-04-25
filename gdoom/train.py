@@ -18,17 +18,19 @@ class Model:
     def __init__(self,policy,cric)
 """
 
-lr_actor = 1e-4
-lr_critic = 1e-4
-num_epochs = 500
-batch_size = 512
-minibatch_size = 64
+lr_actor = 5e-5
+lr_critic = 1e-5
+num_epochs = 5000
+batch_size = 128
+minibatch_size = 32
+
+MAX_GRAD_NORM = 0.5
 
 PPO_EPSILON = 0.2
 CRITIC_BALANCE = 0.5
-ENTROPY_BETA = 0.001
+ENTROPY_BETA = 0.01
 
-LR_DECAY = 0.995
+LR_DECAY = 1
 
 
 
@@ -81,6 +83,8 @@ def train(env, policy,critic):
             #print(a_prob.numpy())
 
             a = (np.cumsum(np.exp(a_log_probs.cpu().numpy())) > np.random.rand()).argmax() # sample action
+            # if np.random.rand() < 0.2:
+            #     a = np.random.randint(7)
             s1, r, done, info = env.step(int(a)) #s1 comes in 640x640x4
             states_human_size.append(np.asarray(s1))
             s1 = cropping(s1)
@@ -127,21 +131,23 @@ def train(env, policy,critic):
             #PPO losses
             prob_ratio = torch.exp(log_likelihood_old - log_likelihood_new) #opposite sign cause computed by NLL
             surrogate_objective = prob_ratio * advantages
-            surrogate_objective_clipped = torch.clamp(prob_ratio, 0.98 - PPO_EPSILON, 1.02 + PPO_EPSILON) * advantages
+            surrogate_objective_clipped = torch.clamp(prob_ratio, 1 - PPO_EPSILON, 1 + PPO_EPSILON) * advantages
 
             entropy = - torch.exp(a_log_probs) * a_log_probs
-
-            loss_actor = - torch.min(surrogate_objective, surrogate_objective_clipped).mean()
+            entropy = entropy.sum(-1)
+            loss_actor = - torch.min(surrogate_objective, surrogate_objective_clipped).sum()
             advantages_new = returns.to(device) - values.view(-1)
-            loss_critic = advantages_new.pow(2).mean()
+            loss_critic = advantages_new.pow(2).sum()
 
-            loss = loss_actor + CRITIC_BALANCE * loss_critic - ENTROPY_BETA * entropy.mean()
+            loss = loss_actor + CRITIC_BALANCE * loss_critic - ENTROPY_BETA * entropy.sum()
 
             # loss_actor.backward()
             # loss_critic.backward()
 
             loss.backward()
 
+            nn.utils.clip_grad_norm_(policy.parameters(), MAX_GRAD_NORM)
+            nn.utils.clip_grad_norm_(critic.parameters(), MAX_GRAD_NORM)
             optimizer_actor.step()
             optimizer_critic.step()
             # scheduler_actor.step()
@@ -156,8 +162,7 @@ def train(env, policy,critic):
         total_reward = batch_buffer.rewards_of_batch.sum()
         if max_reward < total_reward:
             max_reward = total_reward
-            format_frames = np.array(states_human_size)
-            imageio.mimwrite('videos/training_ppo_reward'+str(int(max_reward))+'.mp4', format_frames[:,:,:,0], fps = 15)
+
 
         print("==========================================")
         print("Epoch: ", epoch, "/", num_epochs)
@@ -170,7 +175,9 @@ def train(env, policy,critic):
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
-
+        if epoch % 10 == 0:
+            format_frames = np.array(states_human_size)
+            imageio.mimwrite('videos/training_ppo_'+str(epoch)+'.mp4', format_frames[:,:,:,0], fps = 15)
 
 
     print('done')

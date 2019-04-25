@@ -219,18 +219,29 @@ class GDoomEnv(gym.Env):
         return 0
     def shape_reward(self, r_t, misc, prev_misc, t=None):
         # Check any kill count
+        if self.level == 1: ## DEADLY CORRIDOR
+            r_t = 0.15 * r_t
+            if (misc[0] > prev_misc[0]):
+                r_t = r_t + 100
 
-        r_t = 0
-        if (misc[0] > prev_misc[0]):
-            r_t = r_t + 1
+            if (misc[1] < prev_misc[1]):  # Use ammo
+                r_t = r_t - 5
 
-        if (misc[1] < prev_misc[1]):  # Use ammo
-            r_t = r_t - 0.1
+            if (misc[2] < prev_misc[2]):  # Loss HEALTH
+                r_t = r_t - 0.5
 
-        if (misc[2] < prev_misc[2]):  # Loss HEALTH
-            r_t = r_t - 0.1
+            return r_t/100
+        else:
+            if (misc[0] > prev_misc[0]):
+                r_t = r_t + 1
 
-        return r_t
+            if (misc[1] < prev_misc[1]):  # Use ammo
+                r_t = r_t - 0.1
+
+            if (misc[2] < prev_misc[2]):  # Loss HEALTH
+                r_t = r_t - 0.1
+
+            return r_t
 
 
     def reset(self):
