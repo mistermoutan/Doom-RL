@@ -1,6 +1,6 @@
 import numpy as np
 from collections import deque, namedtuple
-from random import sample
+from random import sample as randomSample
 
 from gdoom_env import *
 from frames import *
@@ -81,7 +81,7 @@ class ReplayMemory(object):
         Randomly samples as many sample as the batch size
         Than randomly allocates them in the mini-batches
         '''
-        return [sample(self.memory, batch_size)[i:i+minibatch_size] for i in range(0,batch_size,minibatch_size)]
+        return [randomSample(self.memory, batch_size)[i:i+minibatch_size] for i in range(0,batch_size,minibatch_size)]
 
     def __len__(self):
         return len(self.memory)
