@@ -35,15 +35,17 @@ def torchify(state, device):
 #########################################################################################################
 
 # Hyperparameters
+# https://www.nature.com/articles/nature14236/tables/1 Deep Mind's Table
 
-BATCH_SIZE = 512
-MINIBATCH_SIZE = 64
-GAMMA = 0.95
-EPS_START = 0.95
-EPS_END = 0.05
-EPS_DECAY = 1000
-TARGET_UPDATE = 10
-LEARNING_RATE = 1e-6
+BATCH_SIZE = 32
+MINIBATCH_SIZE = 32
+GAMMA = 0.99
+EPS_START = 1
+EPS_END = 0.1
+EPS_DECAY = 200000
+TARGET_UPDATE = 1000
+# LEARNING_RATE = 0.000025 for RMSProp
+LEARNING_RATE = 0.0000625 # for Adam
 
 SOFTMAX_MULT = 50
 
@@ -56,8 +58,10 @@ class Trainer:
         self.population = [i for i in range(n_actions)]
 
         self.policy_net = DeepQNet(nbrActions=n_actions).to(device)
+        self.policy_net.apply(weights_init)
         self.target_net = DeepQNet(nbrActions=n_actions).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net.apply(weights_init)
         self.target_net.eval()
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=LEARNING_RATE)
@@ -66,7 +70,8 @@ class Trainer:
         self.steps_done = 0
         self.episode_durations = []
 
-        self.display_every = 50
+        self.display_every = 1000
+        self.display = False
 
     def getMemory(self):
         return self.memory
@@ -90,6 +95,10 @@ class Trainer:
         return
 
     def select_action(self, state):
+        '''
+        TODO update according to https://openai.com/blog/openai-baselines-dqn/
+        Have two slopes for decrease in exploration probability.
+        '''
         sample = random()
         eps_threshold = EPS_END + ((EPS_START - EPS_END)*exp(-1. * self.steps_done / EPS_DECAY))
         self.steps_done += 1
@@ -102,9 +111,11 @@ class Trainer:
                 # t.max(1) will return largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                distribution = softmax(SOFTMAX_MULT * self.policy_net(state).view(-1).numpy())
-                return torch.tensor([choices(self.population, distribution)], device=self.device, dtype=torch.long)
-                #return self.policy_net(state).max(1)[1].view(1, 1)
+                
+                # distribution = softmax(SOFTMAX_MULT * self.policy_net(state).view(-1).numpy())
+                # return torch.tensor([choices(self.population, distribution)], device=self.device, dtype=torch.long)
+                
+                return self.policy_net(state).max(1)[1].view(1, 1)
         else:
             return torch.tensor([[randrange(self.n_actions)]], device=self.device, dtype=torch.long)
 
@@ -144,7 +155,11 @@ class Trainer:
             # This is merged based on the mask, such that we'll have either the expected
             # state value or 0 in case the state was final.
             next_state_values = torch.zeros(MINIBATCH_SIZE, device=self.device)
+            # NOTE WHY NOT CONSIDER THE TERMINATING STATES????
+            # Deep Mind paper says that the state action value should be the reward in the case of terminating sequence.
+            # Here, It comes from the mask.
             next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
+
             # Compute the expected Q values
             expected_state_action_values = (next_state_values * GAMMA) + reward_batch
 
@@ -159,7 +174,7 @@ class Trainer:
             self.optimizer.step()
 
 
-    def train(self, num_episodes=500):
+    def train(self, num_episodes=1000):
         rewards = []
         for i_episode in range(num_episodes):
             print('Episode: {0}'.format(i_episode + 1))
@@ -189,7 +204,7 @@ class Trainer:
                 state = next_state
 
                 # Perform optimization (on the target network)
-                if self.steps_done % MINIBATCH_SIZE == 0:
+                if self.steps_done % 1 == 0:
                     self.optimize_model()
 
                 if done:
@@ -201,7 +216,7 @@ class Trainer:
             if i_episode % TARGET_UPDATE == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
-            if (i_episode+1) % self.display_every == 0:
+            if ((i_episode+1) % self.display_every == 0) and (self.display):
                 display_episode(np.array(states_human_size))
                 pass
         plotRewards(rewards)
