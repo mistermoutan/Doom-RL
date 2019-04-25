@@ -7,7 +7,9 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 
+
 from math import exp
+from statistics import mean
 from random import random, randrange, choices
 from itertools import count
 from scipy.special import softmax
@@ -30,6 +32,7 @@ from utils import *
 def torchify(state, device):
     return torch.from_numpy(state).float().permute(2,0,1).view(1,4,64,64).to(device)
 
+
 #########################################################################################################
 #########################################################################################################
 #########################################################################################################
@@ -46,6 +49,9 @@ EPS_DECAY = 200000
 TARGET_UPDATE = 1000
 # LEARNING_RATE = 0.000025 for RMSProp
 LEARNING_RATE = 0.0000625 # for Adam
+OPTIMIZE_FREQUENCY = 1
+PLOT_FREQUENCY = 10
+DISPLAY_FREQUENCY = 10
 
 SOFTMAX_MULT = 50
 
@@ -69,8 +75,11 @@ class Trainer:
 
         self.steps_done = 0
         self.episode_durations = []
+        self.life_rewards = []
+        self.life_reward = 0
+        self.losses = []
 
-        self.display_every = 1000
+        self.display_every = 10
         self.display = False
 
     def getMemory(self):
@@ -124,6 +133,7 @@ class Trainer:
         if len(self.memory) < BATCH_SIZE:
             return
 
+        losses = []
         minibatches = self.memory.sample(BATCH_SIZE, MINIBATCH_SIZE)
 
         # Mini Batches
@@ -154,17 +164,34 @@ class Trainer:
             # on the "older" target_net; selecting their best reward with max(1)[0].
             # This is merged based on the mask, such that we'll have either the expected
             # state value or 0 in case the state was final.
-            next_state_values = torch.zeros(MINIBATCH_SIZE, device=self.device)
+            next_state_values = torch.zeros((MINIBATCH_SIZE,3), device=self.device)
             # NOTE WHY NOT CONSIDER THE TERMINATING STATES????
             # Deep Mind paper says that the state action value should be the reward in the case of terminating sequence.
             # Here, It comes from the mask.
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
 
-            # Compute the expected Q values
-            expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+            ## To suppress.
+            # next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
+
+            ## TODO 
+            # Check for amax(s';theta) = argmax_a' Q(s'; a'; theta) using policy net.
+            next_state_a_max = torch.zeros(MINIBATCH_SIZE, device=self.device, dtype=torch.long)
+            next_state_a_max[non_final_mask] = self.policy_net(non_final_next_states).max(1)[1].detach()
+
+            ## TODO 
+            # Generate new states with the amax
+            next_state_values[non_final_mask] = self.target_net(non_final_next_states).detach()
+
+            qOperator = nn.NLLLoss(reduction='none')
+            new_next_state_values = (-1*qOperator(next_state_values, next_state_a_max))
+            
+             # And then use r + Q(s'; amax (s'; theta); theta-); using target net to get q value
+             # Compute the expected Q values
+            expected_state_action_values = (new_next_state_values * GAMMA) + reward_batch
+           
 
             # Compute Huber loss
             loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
+            losses.append(loss.item())
 
             # Optimize the model
             self.optimizer.zero_grad()
@@ -172,10 +199,11 @@ class Trainer:
             for param in self.policy_net.parameters():
                 param.grad.data.clamp_(-1, 1)
             self.optimizer.step()
+        return mean(losses)
 
 
     def train(self, num_episodes=1000):
-        rewards = []
+        
         for i_episode in range(num_episodes):
             print('Episode: {0}'.format(i_episode + 1))
 
@@ -188,7 +216,7 @@ class Trainer:
                 action = self.select_action(state)
                 next_state, reward, done, info = self.env.step(action.item())
                 states_human_size.append(np.asarray(next_state))
-                rewards.append(reward)
+                self.life_reward += reward
                 reward = torch.tensor([reward], device=self.device)
             
                 # Observe new state
@@ -204,22 +232,27 @@ class Trainer:
                 state = next_state
 
                 # Perform optimization (on the target network)
-                if self.steps_done % 1 == 0:
-                    self.optimize_model()
+                if self.steps_done % OPTIMIZE_FREQUENCY == 0:
+                    loss = self.optimize_model()
+                    self.losses.append(loss)
 
                 if done:
+                    self.life_rewards.append(self.life_reward)
+                    self.life_reward = 0
                     self.episode_durations.append(t + 1)
                     print(info)
-                    # plot_durations() # TODO
                     break
+
+            if (i_episode+1) % PLOT_FREQUENCY == 0:
+                plotRewardsLosses(i_episode, self.life_rewards, self.losses)
+
             # Update the target network, copying all weights and biases in DQN
             if i_episode % TARGET_UPDATE == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
-            if ((i_episode+1) % self.display_every == 0) and (self.display):
+            if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (self.display):
                 display_episode(np.array(states_human_size))
                 pass
-        plotRewards(rewards)
 
     def preTrainMemory(self, pre_train=1000):
 

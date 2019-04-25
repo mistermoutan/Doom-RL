@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt 
+from IPython.display import clear_output
+import numpy as np
 
 def random_policy_human():
 
@@ -26,7 +28,13 @@ def random_policy_human():
         # the reward, if the env is over, and other info.
         frame, _, _, _ =env_human.step(action)
 
-def plotRewards(rewards):
-    plt.figure()
-    plt.plot([x for x in range(len(rewards))], rewards, '-')
+def plotRewardsLosses(frame_idx, rewards, losses):
+    clear_output(True)
+    plt.figure(figsize=(20,5))
+    plt.subplot(121)
+    plt.title('frame %s. reward: %s' % (frame_idx, np.mean(rewards[-10:])))
+    plt.plot(rewards)
+    plt.subplot(122)
+    plt.title('loss')
+    plt.plot(losses)
     plt.show()

@@ -39,9 +39,14 @@ class DeepQNet(nn.Module):
         self.fc1 = nn.Sequential(
             nn.Linear(8*16*64, 512),
             nn.ReLU())
-        self.fc2 = nn.Sequential(
-            nn.Linear(512, nbrActions),
-            nn.ReLU())
+        self.advantage = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, nbrActions))
+        self.value = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, 1))
         
     def forward(self, x):
         x = self.conv1(x)
@@ -49,6 +54,7 @@ class DeepQNet(nn.Module):
         x = self.conv3(x)
         x = x.view(x.shape[0], -1)
         x = self.fc1(x)
-        x = self.fc2(x)
+        advantage = self.advantage(x)
+        value     = self.value(x)
+        return value + advantage  - advantage.mean()
         
-        return x

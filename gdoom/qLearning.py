@@ -35,11 +35,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Get number of actions from gym action space
 n_actions = env.action_space.n
-memorySize = 1000000
+memorySize = 100000
 memory = ReplayMemory(memorySize)
 
 # Initialize memory with 1000 random states
-
 trainer = Trainer(env, device, n_actions, memory)
 
 ################
@@ -50,8 +49,14 @@ print('---Done Pre Training---')
 trainer.train(num_episodes=500)
 
 # Saving
-memory = trainer.getMemory()
-serializeObject(memory, HOME_DIR + '/saves/memory{0}.pickle'.format(memorySize))
+RECOVER_MEMORY = TRUE
+if RECOVER_MEMORY:
+    memory = readPickled(HOME_DIR + '/saves/memory{0}.pickle'.format(memorySize))
+else:
+    memory = trainer.getMemory()
+    serializeObject(memory, HOME_DIR + '/saves/memory{0}.pickle'.format(memorySize))
+
+
 policyNet = trainer.getPolicyNet()
 serializeObject(policyNet, HOME_DIR + '/saves/policyNet.pickle')
 targetNet = trainer.getTargetNet()
