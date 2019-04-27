@@ -106,12 +106,14 @@ class Statistics:
         figure = plt.figure()
         x_axis = np.arange(len(self.loss_actor))
         plt.plot(x_axis,self.loss_actor)
+        plt.title("ACTOR/POLICY LOSS")
         figure.savefig(self.directory + "loss_actor_evolution.png")
 
         if self.loss_critic:
             figure = plt.figure()
             x_axis = np.arange(len(self.loss_critic))
             plt.plot(x_axis,self.loss_critic)
+            plt.title("CRITIC LOSS")
             figure.savefig(self.directory + "loss_critic.png")
             
         #evolution of rewards per episode
@@ -119,7 +121,6 @@ class Statistics:
         x_axis = np.arange(len(self.rewards_per_episode))
         plt.plot(x_axis,self.rewards_per_episode)
         plt.title("REWARDS PER EPISODE")
-
         figure.savefig(self.directory + "rewards_per_episode_evolution.png")
 
         #evolution of episode lenght
