@@ -85,6 +85,8 @@ class Statistics:
         if save:
             self.write_pickle(self.stats,self.directory,"stats.pickle")
 
+        #TODO: Add over last 100 episosdes stats
+
     def save_arrays(self):
         """ saves arrays in dict, may be relevant for future comparion between methods"""
 
