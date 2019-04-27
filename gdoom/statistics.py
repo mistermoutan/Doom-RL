@@ -63,9 +63,11 @@ class Statistics:
 
 
     def build_stats_dictionary(self, save = True):
-        """ builds dictionary of statistics (self.stats), saves it as a pickle """
+        """ builds dictionary of statistics (self.stats), saves it as a pickle
+            açso builds dict containing info for the last 100 episodes """
 
         self.stats = {}
+        self.stats_last100episodes = {}
         assert len(self.rewards_per_episode) == len(self.lenght_episodes)
 
         self.stats["date"] = time.strftime("%c")
@@ -81,11 +83,17 @@ class Statistics:
 
         if self.kills_per_episode:
             self.stats["avg_kills_episode"] = sum(self.kills_per_episode) / self.stats["steps"]
+            self.stats_last100episodes["avg_kills_episode"] = sum(self.kills_per_episode[-100:]) / 100
+
+
+
+        self.stats_last100episodes["avg_len_episode"] = sum(self.lenght_episodes[-100:]) / 100
+        self.stats_last100episodes["avg_reward_episode"] = sum(self.rewards_per_episode[-100:]) / 100
     
         if save:
             self.write_pickle(self.stats,self.directory,"stats.pickle")
+            self.write_pickle(self.stats_last100episodes,self.directory,"stats_last_100.pickle")
 
-        #TODO: Add over last 100 episosdes stats
 
     def save_arrays(self):
         """ saves arrays in dict, may be relevant for future comparion between methods"""
@@ -98,6 +106,7 @@ class Statistics:
         
         dict_of_arrays["loss_actor"] = self.loss_actor
         dict_of_arrays["loss_critic"] = self.loss_critic
+
         
         self.write_pickle(dict_of_arrays,self.directory,"arrays.pickle")
 
@@ -143,6 +152,12 @@ class Statistics:
         with open(self.directory + "log.txt",'w') as logbook:
             for key,value in self.stats.items():
                 logbook.write("{0} : {1}  \n " .format(key,value))
+            logbook.write("\n LAST 100: \n")
+            for key,value in self.stats_last100episodes.items():
+                logbook.write("{0} : {1}  \n " .format(key,value))
+
+
+
 
 
     def convert_scenario(self,scenario):
