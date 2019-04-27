@@ -1,0 +1,10 @@
+date : Sat Apr 27 13:37:42 2019  
+ method : a2c  
+ scenario : avoid_fireballs  
+ batch_size : 10  
+ mini_batch_size : None  
+ steps : 269  
+ avg_len_episode : 53.8  
+ avg_reward_episode : 217.16  
+ training_time : 0:00:05.868217  
+ 

@@ -23,8 +23,9 @@ def train_a2c(a2c):
     env = a2c.env
     policy = a2c.policy
     critic = a2c.critic
-    num_epochs = 2000
-    statistics = Statistics(scenario = a2c.env_string, method = a2c.method, epochs = num_epochs)
+    num_epochs = 5
+    statistics = Statistics(scenario = a2c.env_string, method = a2c.method, epochs = num_epochs, directory = 'stats/test1/' )
+    statistics.batch_size = 10
 
     batch_size = 10 # 1 episode only
     discount_factor = 0.95 # reward discount factor (gamma), 1.0 = no discount
@@ -37,11 +38,11 @@ def train_a2c(a2c):
     #    {'params': policy.fc.parameters(), 'lr': 0.01},
     #], lr=0)
 
-    training_rewards, losses_actor , losses_critic = [], [], []
+    training_rewards = []
     print('Start training')
     
     for epoch in range(num_epochs):
-        batch = []
+
         s = env.reset()
         states_human_size = [s]
         s = cropping(s)
@@ -55,14 +56,10 @@ def train_a2c(a2c):
         while True:
             # generate rollout by iteratively evaluating the current policy on the environment
             with torch.no_grad():
-
                 s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
                 a_prob = policy(s_tensor)  #calls forward function
                 estimated_value = critic(s_tensor)
-                print(a_prob)
             
-            #print(a_prob.numpy())
-
             a = (np.cumsum(np.exp(a_prob.numpy())) > np.random.rand()).argmax() # sample action
             s1, r, done, info = env.step(int(a)) #s1 comes in 640x640x4
             states_human_size.append(np.asarray(s1))
@@ -72,15 +69,13 @@ def train_a2c(a2c):
             rewards_of_episode.append(r)
             value_observations.append(estimated_value) #y's of critic
 
-            statistics.action_taken.append(a)
-            statistics.rewards.append(r)
-
-            if not done:
-                masks.append(1)
-
             if done:
                 rewards_of_batch.append(rewards_of_episode)
                 masks.append(0)
+                statistics.rewards_per_episode.append(info['accumulated_reward']) #not with the death penalty
+                statistics.lenght_episodes.append(info['time_alive'])
+                #statistics.kills_per_episode.append(info['kills'])
+
                 # isn't this just making the final rewards of an episode go small, this should be for each time step
                 discounted_rewards.append(discount_and_normalize_rewards(rewards_of_episode, discount_factor))
                 #value_observations_discounted.append(discount_and_normalize_rewards(value_observations,discount_factor))
@@ -92,6 +87,7 @@ def train_a2c(a2c):
 
                 s = cropping(env.reset())
             else:
+                masks.append(1)
                 s = s1
 
         # prepare batch
@@ -103,7 +99,7 @@ def train_a2c(a2c):
         actual_batch_size = states.shape[0] #can be different from batch size as episode length is not constant
         states_batch = torch.from_numpy(normalize(states)).float().permute(0,3,2,1)
         a_log_probs = policy(states_batch)
-        print(a_log_probs)
+        #print(a_log_probs)
 
         #observed values of critic
         observed_values_critic = np.stack(np.array(value_observations))
@@ -112,7 +108,7 @@ def train_a2c(a2c):
         observed_values_critic = Variable(observed_values_critic,requires_grad = True)
 
         s1 = torch.from_numpy(normalize(s1)).float().permute(2,0,1).view(1,4,64,64)
-        next_value = critic(s1) #of last state of episode or of first state of next episode
+        next_value = critic(s1) #of last state of episode or of first state of next episode?
         target_values_critic = compute_returns_critic(next_value,rewards_of_batch,masks)
         target_values_critic = torch.Tensor(target_values_critic).view(-1)
         target_values_critic = Variable(target_values_critic,requires_grad = True)
@@ -133,8 +129,8 @@ def train_a2c(a2c):
 
         #advantages_tensor = torch.Tensor(advantages).view(-1)
 
-        losses_actor.append(loss_actor.item())
-        losses_critic.append(loss_critic.item())
+        statistics.loss_actor.append(loss_actor.item())
+        statistics.loss_critic.append(loss_critic.item())
 
 
         
@@ -146,7 +142,6 @@ def train_a2c(a2c):
         print("-----------")
         print("Number of training episodes: {}".format(num_episode))
         print("Average Lenght of Episode: {}".format(np.mean(len_episodes_batch)))
-        print(len_episodes_batch)
         print("Total reward: {0:.2f}".format(np.sum(rewards_of_batch)))
         print("Mean Reward of that batch {0:.2f}".format(np.mean(rewards_of_batch)))
         print("Training Loss for Actor: {0:.2f}".format(loss_actor.item()))
@@ -155,19 +150,9 @@ def train_a2c(a2c):
 
         
         if (epoch+1) % 50 == 0:
-            #display_episode(np.array(states_human_size))
-            format_frames = np.array(states_human_size)
-            imageio.mimwrite('videos/a2c_videos_scenario7/training_a2c'+str(epoch+1)+'.mp4', format_frames[:,:,:,0], fps = 15)
-            #plt.figure(figsize = (10,10))
-            #x = [i for i in range(0,50)]
-            #plt.plot(training_loss)
-            #plt.show()
-            # keep track of changing porbabilities of each actions (line charts) 
-            # chart of rewards
-            # charts of t
-            # log file for statistics: scenario
+            pass
 
-
+    statistics.get_statistics()
     print('done')
 
 
@@ -250,9 +235,7 @@ def discount_and_normalize_rewards(episode_rewards, discount_factor):
 def normalise_list (l,max_intensity):
 
     max= np.max(l)
-
     l = (l/max_value) * max_intensity
-
     return l
 
 

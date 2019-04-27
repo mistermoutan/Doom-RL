@@ -21,8 +21,6 @@ class A2C:
         print("GDoomEnv called")
 
 
-
-
 ##################
 # Initialization #
 ##################
