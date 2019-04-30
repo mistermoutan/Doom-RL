@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import cv2
 import utils
 import imageio
+from statistics import Statistics
 imageio.plugins.ffmpeg.download()
 import copy
 from buffer import Buffer
@@ -37,7 +38,16 @@ LR_DECAY = 1
 cuda = torch.cuda.is_available()
 device = "cuda:0" if cuda else "cpu"
 
-def train(env, policy,critic):
+def train(algo):
+
+    env = algo.env
+    policy = algo.policy
+    critic = algo.critic
+
+    statistics = Statistics(scenario = algo.env_string, method = algo.method, epochs = num_epochs, directory = 'stats/test1/' )
+    statistics.batch_size = batch_size
+    statistics.mini_batch_size = minibatch_size
+
 
     optimizer_actor = optim.Adam(policy.parameters(), lr=lr_actor) #update parameters
     optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) #update parameters
@@ -99,6 +109,9 @@ def train(env, policy,critic):
 
             if done:
                 batch_buffer.masks.append(0)
+                statistics.rewards_per_episode.append(info['accumulated_reward']) #not with the death penalty
+                statistics.lenght_episodes.append(info['time_alive'])
+                statistics.kills_per_episode.append(info['kills'])
                 rewards_of_episode = []
                 num_episode += 1
                 s = cropping(env.reset())
@@ -157,6 +170,9 @@ def train(env, policy,critic):
             losses_critic.append(loss_critic.item())
 
 
+            statistics.loss_actor.append(loss_actor.item())
+            statistics.loss_critic.append(loss_critic.item())
+
 
            # bookkeeping
         total_reward = batch_buffer.rewards_of_batch.sum()
@@ -179,7 +195,7 @@ def train(env, policy,critic):
             format_frames = np.array(states_human_size)
             imageio.mimwrite('videos/training_ppo_'+str(epoch)+'.mp4', format_frames[:,:,:,0], fps = 15)
 
-
+    statistics.get_statistics()
     print('done')
 
 
