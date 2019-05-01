@@ -85,8 +85,6 @@ class Statistics:
             self.stats["avg_kills_episode"] = sum(self.kills_per_episode) / self.stats["steps"]
             self.stats_last100episodes["avg_kills_episode"] = sum(self.kills_per_episode[-100:]) / 100
 
-
-
         self.stats_last100episodes["avg_len_episode"] = sum(self.lenght_episodes[-100:]) / 100
         self.stats_last100episodes["avg_reward_episode"] = sum(self.rewards_per_episode[-100:]) / 100
     
