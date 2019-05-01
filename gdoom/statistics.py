@@ -5,6 +5,7 @@ import datetime
 from matplotlib import pyplot as plt
 import numpy as np
 import pickle
+import os
 
 """
 Class to benchmark performance of methods
@@ -32,6 +33,9 @@ class Statistics:
 
         self.start_time = time.time()
         self.directory = directory
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            print('Creating new directory:: ', directory)
         self.scenario = scenario
         self.method = method # the algorithm used
         self.epochs = epochs

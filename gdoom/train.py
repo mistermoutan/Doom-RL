@@ -21,7 +21,7 @@ class Model:
 
 lr_actor = 5e-5
 lr_critic = 1e-5
-num_epochs = 5000
+num_epochs = 500
 batch_size = 128
 minibatch_size = 32
 
@@ -44,7 +44,10 @@ def train(algo):
     policy = algo.policy
     critic = algo.critic
 
-    statistics = Statistics(scenario = algo.env_string, method = algo.method, epochs = num_epochs, directory = 'stats/test1/' )
+    statistics = Statistics(scenario = algo.env_string,
+                            method = algo.method,
+                            epochs = num_epochs,
+                            directory = 'stats/ppo/center1' )
     statistics.batch_size = batch_size
     statistics.mini_batch_size = minibatch_size
 
@@ -181,7 +184,7 @@ def train(algo):
 
 
         print("==========================================")
-        print("Epoch: ", epoch, "/", num_epochs)
+        print("Epoch: ",(epoch+1), "/", num_epochs)
         print("-----------")
         print("Number of training episodes: {}".format(num_episode))
         print("Total reward: {0:.2f}".format(total_reward))
@@ -191,7 +194,7 @@ def train(algo):
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
-        if epoch % 10 == 0:
+        if epoch % 50 == 0:
             format_frames = np.array(states_human_size)
             imageio.mimwrite('videos/training_ppo_'+str(epoch)+'.mp4', format_frames[:,:,:,0], fps = 15)
 
