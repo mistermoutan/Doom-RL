@@ -203,6 +203,7 @@ class Trainer:
 
     def train(self, num_episodes=1000):
 
+        iteration = 0
         for i_episode in range(num_episodes):
             print('Episode: {0}'.format(i_episode + 1))
 
@@ -211,6 +212,7 @@ class Trainer:
             states_human_size = [np.asarray(state)] # Allow visualization of episode.
             state = torchify(preprocessState(state), self.device)
             for t in count():
+                iteration += 1
                 # Select and perform an action
                 action = self.select_action(state)
                 next_state, reward, done, info = self.env.step(action.item())
@@ -247,7 +249,7 @@ class Trainer:
                 # plotRewardsLosses(i_episode, self.life_rewards, self.losses)
 
             # Update the target network, copying all weights and biases in DQN
-            if i_episode % TARGET_UPDATE == 0:
+            if iteration % TARGET_UPDATE == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
             if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (DISPLAY):
