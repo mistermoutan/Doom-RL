@@ -180,6 +180,8 @@ class Statistics:
             converted_scenario = "predict_position_rocket_launcher"
         elif "scenario7" in self.scenario:
             converted_scenario = "avoid_fireballs"
+        elif "scenario0" in self.scenario:
+            converted_scenario = "basic"
 
         return converted_scenario
 

@@ -24,7 +24,7 @@ class PPO:
 ##################
 # Initialization #
 ##################
-ppo = PPO("doom_scenario2_640-v0")
+ppo = PPO("doom_scenario0_640-v0")
 
 ################
 # Train policy #

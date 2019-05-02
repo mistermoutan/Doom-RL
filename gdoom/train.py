@@ -22,7 +22,7 @@ class Model:
 lr_actor = 5e-5
 lr_critic = 1e-5
 num_epochs = 500
-batch_size = 128
+batch_size = 256
 minibatch_size = 32
 
 MAX_GRAD_NORM = 0.5
@@ -47,7 +47,7 @@ def train(algo):
     statistics = Statistics(scenario = algo.env_string,
                             method = algo.method,
                             epochs = num_epochs,
-                            directory = 'stats/ppo/center1' )
+                            directory = 'stats/ppo/health' )
     statistics.batch_size = batch_size
     statistics.mini_batch_size = minibatch_size
 
