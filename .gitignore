@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 *.swp
 *.pyc
 *.pkl
@@ -152,4 +151,4 @@ baselines-master/baselines/__pycache__/
 gdoom/baselines/common/__pycache__/
 gdoom/wrappers/__pycache__/
 gdoom/__pycache__/
->>>>>>> 95ff3dbc468ad42da80e9d5e7cbaed8130f31af0
+gdoom/saves/

@@ -1,62 +1,60 @@
 from gym.utils.play import play
-import numpy as np
 from gdoom_env import *
+
 from train import *
 from experienceReplay import *
-import matplotlib
-import torch.optim as optim
+from utils import *
 
 
-import matplotlib.pyplot as plt
-import torch
-
+####################
+#    Parameters    #
+####################
+RECOVER_MEMORY = True
+MEMORY_SIZE = 20000
 
 #########################################################################################################
-#########################################################################################################
-#########################################################################################################
-
+blockPrint()
 # Make a CPU environemnt the good ol' way (not recommended, see __init__.py).
 genv = WGDoomEnv(level=1, frame_size=640)
 
 # Also make a GPU environment, but using openai:
+enablePrint()
 env = gym.make("doom_scenario2_640-v0")
 frame = env.reset()
 
-#########################################################################################################
-#########################################################################################################
-#########################################################################################################
-
-# if gpu is to be used
+# If gpu is to be used.
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-####################
-# Creating network #
-####################
-
-# Get number of actions from gym action space
+# Get number of actions from gym action space.
 n_actions = env.action_space.n
-memorySize = 20000
-memory = ReplayMemory(memorySize)
 
-# Initialize memory with 1000 random states
-trainer = Trainer(env, device, n_actions, memory)
+#########################################################################################################
 
-################
-# Train policy #
-################
-trainer.preTrainMemory(pre_train=int(memorySize/10))
-print('---Done Pre Training---')
-trainer.train(num_episodes=1000)
-
-# Saving
-RECOVER_MEMORY = TRUE
+####################
+#  Instantiation   #
+####################
+noFile = None
 if RECOVER_MEMORY:
-    memory = readPickled(HOME_DIR + '/saves/memory{0}.pickle'.format(memorySize))
-else:
-    memory = trainer.getMemory()
-    serializeObject(memory, HOME_DIR + '/saves/memory{0}.pickle'.format(memorySize))
+    try:
+        memory = readPickled(HOME_DIR + '/saves/{0}.pickle'.format(ReplayMemory.getSaveName(MEMORY_SIZE)))
+        trainer = Trainer(env, device, n_actions, memory)
+    except FileNotFoundError:
+        noFile = True
+if (not RECOVER_MEMORY) or noFile:
+    memory = ReplayMemory(MEMORY_SIZE)
+    trainer = Trainer(env, device, n_actions, memory)
+    trainer.preTrainMemory(pre_train=int(MEMORY_SIZE/10))
+print('\n---- Done Pre Training ----\n---- ESTIMATION FOR EXPERIENCE REPLAY MEMORY SIZE ----\n{0} MB\n'.format(memory.getInMemorySize()))
 
 
+################
+#     Train    #
+################
+trainer.train(num_episodes=10)
+
+
+memory = trainer.getMemory()
+serializeObject(memory, HOME_DIR + '/saves/{0}.pickle'.format(ReplayMemory.getSaveName(MEMORY_SIZE)))
 policyNet = trainer.getPolicyNet()
 serializeObject(policyNet, HOME_DIR + '/saves/policyNet.pickle')
 targetNet = trainer.getTargetNet()

@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-from collections import deque
 import matplotlib.pyplot as plt
 
 def preprocessState(state):

@@ -1,62 +1,14 @@
 import numpy as np
-from collections import deque, namedtuple
+from collections import namedtuple
 from random import sample as randomSample
 
 from gdoom_env import *
-from frames import *
 from serialization import *
-
-
-#########################################################################################################
-# My version
-class ExperienceReplay():
-    '''
-    Format for saved states
-    [state, action, reward, nextState, done]
-    '''
-    def __init__(self, maxSize):
-        self.buffer = deque(maxlen=maxSize)
-
-    def add(self, experience):
-        self.buffer.append(experience)
-
-    def sample(self, batchSize):
-        bufferSize = len(self.buffer)
-        index = np.random.choice(np.arange(bufferSize),
-                                size = batchSize,
-                                replace = False)
-
-        return [self.buffer[i] for i in index]
-
-
-def preTrainExperienceReplay(er, env, preTrainLength=1000):
-
-    state = env.reset()
-    state = preprocessState(state)
-
-    for i in range(preTrainLength):
-        action = env.action_space.sample()
-
-        newState, reward, done, info = env.step(int(action))
-
-        if done:
-
-            er.add([state, action, reward, newState, done])
-
-            state = env.reset()
-            state = preprocessState(state)
-
-        else:
-            newState = preprocessState(newState)
-
-            er.add([state, action, reward, newState, done])
-
-            state = newState
-
-    return er
+from utils import *
 
 #########################################################################################################
 # From Pytorch Tutorial
+# Named Tuple: https://docs.python.org/2/library/collections.html#collections.namedtuple
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
@@ -76,7 +28,6 @@ class ReplayMemory(object):
         self.position = (self.position + 1) % self.capacity
 
 
-
     def sample(self, batch_size, minibatch_size):
         '''
         Returns a list of minibatches
@@ -85,8 +36,16 @@ class ReplayMemory(object):
         '''
         return [randomSample(self.memory, batch_size)[i:i+minibatch_size] for i in range(0,batch_size,minibatch_size)]
 
+    def getInMemorySize(self):
+        return 0.1*self.capacity
+
     def __len__(self):
         return len(self.memory)
+
+    @staticmethod
+    def getSaveName(memorySize):
+        return 'memory{0}'.format(memorySize)
+
 
 #########################################################################################################
 

@@ -1,44 +1,17 @@
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import matplotlib
-matplotlib.use('Qt5Agg')
-import matplotlib.pyplot as plt
-
-
-from math import exp
-from statistics import mean
-from random import random, randrange, choices
-from itertools import count
-# from scipy.special import softmax
-
-
-import cv2
-import utils
-
 from experienceReplay import *
 from net import *
 from utils import *
 
-## USE THIS
+## NOTES
+
+# Articles
 # https://gist.github.com/simoninithomas/7611db5d8a6f3edde269e18b97fa4d0c#file-deep-q-learning-with-doom-ipynb
 # https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
-#########################################################################################################
-#########################################################################################################
-#########################################################################################################
-
-def torchify(state, device):
-    return torch.from_numpy(state).float().permute(2,0,1).view(1,4,64,64).to(device)
-
-
-#########################################################################################################
-#########################################################################################################
-#########################################################################################################
 
 # Hyperparameters
 # https://www.nature.com/articles/nature14236/tables/1 Deep Mind's Table
+
+#########################################################################################################
 
 BATCH_SIZE = 32
 MINIBATCH_SIZE = 32
@@ -47,14 +20,18 @@ EPS_START = 1
 EPS_END = 0.1
 EPS_DECAY = 200000
 TARGET_UPDATE = 1000
-# LEARNING_RATE = 0.00025 for RMSProp
-LEARNING_RATE = 0.000625 # for Adam
+# LEARNING_RATE = 0.000025 for RMSProp, Deep Mind
+# LEARNING_RATE = 0.000065 for Adam, Deep Mind
+LEARNING_RATE = 1e-4
 OPTIMIZE_FREQUENCY = 1
 PLOT_FREQUENCY = 1000
 DISPLAY = False
 DISPLAY_FREQUENCY = 10
 
 SOFTMAX_MULT = 50
+
+#########################################################################################################
+
 
 class Trainer:
 
@@ -104,7 +81,7 @@ class Trainer:
 
     def select_action(self, state):
         '''
-        TODO update according to https://openai.com/blog/openai-baselines-dqn/
+        Update according to https://openai.com/blog/openai-baselines-dqn/ ?
         Have two slopes for decrease in exploration probability.
         '''
         sample = random()
@@ -128,7 +105,9 @@ class Trainer:
             return torch.tensor([[randrange(self.n_actions)]], device=self.device, dtype=torch.long)
 
     def optimize_model(self):
-
+        '''
+        OPTIMIZATION of the policy network.
+        '''
         if len(self.memory) < BATCH_SIZE:
             return
 
@@ -202,8 +181,10 @@ class Trainer:
 
 
     def train(self, num_episodes=1000):
+        '''
+        TRAINING loop.
+        '''
 
-        iteration = 0
         for i_episode in range(num_episodes):
             print('Episode: {0}'.format(i_episode + 1))
 
@@ -212,7 +193,6 @@ class Trainer:
             states_human_size = [np.asarray(state)] # Allow visualization of episode.
             state = torchify(preprocessState(state), self.device)
             for t in count():
-                iteration += 1
                 # Select and perform an action
                 action = self.select_action(state)
                 next_state, reward, done, info = self.env.step(action.item())
@@ -237,6 +217,10 @@ class Trainer:
                     loss = self.optimize_model()
                     self.losses.append(loss)
 
+                # Update the target network, copying all weights and biases in DQN
+                if self.steps_done % TARGET_UPDATE == 0:
+                    self.target_net.load_state_dict(self.policy_net.state_dict())
+
                 if done:
                     self.life_rewards.append(self.life_reward)
                     self.life_reward = 0
@@ -248,16 +232,15 @@ class Trainer:
                 pass
                 # plotRewardsLosses(i_episode, self.life_rewards, self.losses)
 
-            # Update the target network, copying all weights and biases in DQN
-            if iteration % TARGET_UPDATE == 0:
-                self.target_net.load_state_dict(self.policy_net.state_dict())
-
             if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (DISPLAY):
                 display_episode(np.array(states_human_size))
                 pass
 
-    def preTrainMemory(self, pre_train=1000):
 
+    def preTrainMemory(self, pre_train=1000):
+        '''
+        PRE-FILL memory to start.
+        '''
         state  = self.env.reset()
         state = torchify(preprocessState(state), self.device)
 
