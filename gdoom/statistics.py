@@ -104,8 +104,6 @@ class Statistics:
         
         dict_of_arrays["loss_actor"] = self.loss_actor
         dict_of_arrays["loss_critic"] = self.loss_critic
-
-        
         self.write_pickle(dict_of_arrays,self.directory,"arrays.pickle")
 
     def save_graphs (self):
