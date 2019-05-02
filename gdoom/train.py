@@ -21,7 +21,7 @@ class Model:
 
 lr_actor = 5e-5
 lr_critic = 1e-5
-num_epochs = 500
+num_epochs = 1000
 batch_size = 256
 minibatch_size = 32
 
@@ -44,10 +44,12 @@ def train(algo):
     policy = algo.policy
     critic = algo.critic
 
+    directory = algo.directory
+
     statistics = Statistics(scenario = algo.env_string,
                             method = algo.method,
                             epochs = num_epochs,
-                            directory = 'stats/ppo/health' )
+                            directory = directory)
     statistics.batch_size = batch_size
     statistics.mini_batch_size = minibatch_size
 
@@ -113,14 +115,14 @@ def train(algo):
             if done:
                 batch_buffer.masks.append(0)
                 statistics.rewards_per_episode.append(info['accumulated_reward']) #not with the death penalty
-                statistics.lenght_episodes.append(info['time_alive'])
+                statistics.length_episodes.append(info['time_alive'])
                 statistics.kills_per_episode.append(info['kills'])
                 rewards_of_episode = []
                 num_episode += 1
                 s = cropping(env.reset())
             else:
                 s = s1
-
+        statistics.episode_per_epoch.append(num_episode)
         s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
         s_tensor = s_tensor.to(device)
         next_value = critic(s_tensor)
@@ -178,8 +180,11 @@ def train(algo):
 
 
            # bookkeeping
-        total_reward = batch_buffer.rewards_of_batch.sum()
+        total_reward = batch_buffer.rewards_of_batch.mean()
         if max_reward < total_reward:
+            print("Saving networks")
+            torch.save(policy, directory+"policy_model")
+            torch.save(critic, directory+"critic_model")
             max_reward = total_reward
 
 
