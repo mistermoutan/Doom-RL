@@ -12,7 +12,7 @@ from math import exp
 from statistics import mean
 from random import random, randrange, choices
 from itertools import count
-from scipy.special import softmax
+# from scipy.special import softmax
 
 
 import cv2
@@ -119,10 +119,10 @@ class Trainer:
                 # t.max(1) will return largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                
+
                 # distribution = softmax(SOFTMAX_MULT * self.policy_net(state).view(-1).numpy())
                 # return torch.tensor([choices(self.population, distribution)], device=self.device, dtype=torch.long)
-                
+
                 return self.policy_net(state).max(1)[1].view(1, 1)
         else:
             return torch.tensor([[randrange(self.n_actions)]], device=self.device, dtype=torch.long)
@@ -171,22 +171,22 @@ class Trainer:
             ## To suppress.
             # next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
 
-            ## TODO 
+            ## TODO
             # Check for amax(s';theta) = argmax_a' Q(s'; a'; theta) using policy net.
             next_state_a_max = torch.zeros(MINIBATCH_SIZE, device=self.device, dtype=torch.long)
             next_state_a_max[non_final_mask] = self.policy_net(non_final_next_states).max(1)[1].detach()
 
-            ## TODO 
+            ## TODO
             # Generate new states with the amax
             next_state_values[non_final_mask] = self.target_net(non_final_next_states).detach()
 
             qOperator = nn.NLLLoss(reduction='none')
             new_next_state_values = (-1*qOperator(next_state_values, next_state_a_max))
-            
+
              # And then use r + Q(s'; amax (s'; theta); theta-); using target net to get q value
              # Compute the expected Q values
             expected_state_action_values = (new_next_state_values * GAMMA) + reward_batch
-           
+
 
             # Compute Huber loss
             loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
@@ -202,7 +202,7 @@ class Trainer:
 
 
     def train(self, num_episodes=1000):
-        
+
         for i_episode in range(num_episodes):
             print('Episode: {0}'.format(i_episode + 1))
 
@@ -217,7 +217,7 @@ class Trainer:
                 states_human_size.append(np.asarray(next_state))
                 self.life_reward += reward
                 reward = torch.tensor([reward], device=self.device)
-            
+
                 # Observe new state
                 if not done:
                     next_state = torchify(preprocessState(next_state), self.device)
@@ -243,7 +243,8 @@ class Trainer:
                     break
 
             if (i_episode+1) % PLOT_FREQUENCY == 0:
-                plotRewardsLosses(i_episode, self.life_rewards, self.losses)
+                pass
+                # plotRewardsLosses(i_episode, self.life_rewards, self.losses)
 
             # Update the target network, copying all weights and biases in DQN
             if i_episode % TARGET_UPDATE == 0:
@@ -263,7 +264,7 @@ class Trainer:
 
             next_state, reward, done, info = self.env.step(action.item())
             reward = torch.tensor([reward], device=self.device)
-            
+
             # Observe new state
             if not done:
                 next_state = torchify(preprocessState(next_state), self.device)
