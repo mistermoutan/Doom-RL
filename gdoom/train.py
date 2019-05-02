@@ -47,10 +47,11 @@ EPS_START = 1
 EPS_END = 0.1
 EPS_DECAY = 200000
 TARGET_UPDATE = 1000
-# LEARNING_RATE = 0.000025 for RMSProp
-LEARNING_RATE = 0.0000625 # for Adam
+# LEARNING_RATE = 0.00025 for RMSProp
+LEARNING_RATE = 0.000625 # for Adam
 OPTIMIZE_FREQUENCY = 1
-PLOT_FREQUENCY = 10
+PLOT_FREQUENCY = 1000
+DISPLAY = False
 DISPLAY_FREQUENCY = 10
 
 SOFTMAX_MULT = 50
@@ -79,8 +80,6 @@ class Trainer:
         self.life_reward = 0
         self.losses = []
 
-        self.display_every = 10
-        self.display = False
 
     def getMemory(self):
         return self.memory
@@ -250,7 +249,7 @@ class Trainer:
             if i_episode % TARGET_UPDATE == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
-            if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (self.display):
+            if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (DISPLAY):
                 display_episode(np.array(states_human_size))
                 pass
 

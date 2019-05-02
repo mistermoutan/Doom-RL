@@ -46,7 +46,7 @@ trainer = Trainer(env, device, n_actions, memory)
 ################
 trainer.preTrainMemory(pre_train=int(memorySize/100))
 print('---Done Pre Training---')
-trainer.train(num_episodes=500)
+trainer.train(num_episodes=1000)
 
 # Saving
 RECOVER_MEMORY = TRUE
