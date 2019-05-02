@@ -17,6 +17,6 @@ def readPickled(fileName):
                 # to the value unpickled
                 pickledData = unpickler.load()
     except FileNotFoundError:
-        print('FILE NOT FOUND!: {0}'.format(fileName))
+        raise FileNotFoundError('FILE NOT FOUND!: {0}'.format(fileName))
         pass
     return pickledData

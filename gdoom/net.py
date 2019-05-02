@@ -3,9 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # custom weights initialization called on netG and netD
+# https://arxiv.org/pdf/1502.01852v1.pdf & https://pytorch.org/docs/stable/_modules/torch/nn/init.html
 def weights_init(m):
     if isinstance(m, (nn.Conv2d)):
-        nn.init.kaiming_normal_(m.weight, a=2) # https://arxiv.org/pdf/1502.01852v1.pdf & https://pytorch.org/docs/stable/_modules/torch/nn/init.html
+        nn.init.kaiming_normal_(m.weight, a=2)
     elif isinstance(m, (nn.BatchNorm2d)):
         #nn.init.constant_(m.weight, 1)
         #nn.init.constant_(m.bias, 0)
