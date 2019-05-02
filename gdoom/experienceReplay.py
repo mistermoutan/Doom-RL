@@ -25,7 +25,7 @@ class ExperienceReplay():
         index = np.random.choice(np.arange(bufferSize),
                                 size = batchSize,
                                 replace = False)
-        
+
         return [self.buffer[i] for i in index]
 
 
@@ -74,6 +74,8 @@ class ReplayMemory(object):
             self.memory.append(None)
         self.memory[self.position] = Transition(*args)
         self.position = (self.position + 1) % self.capacity
+
+
 
     def sample(self, batch_size, minibatch_size):
         '''

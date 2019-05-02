@@ -35,7 +35,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Get number of actions from gym action space
 n_actions = env.action_space.n
-memorySize = 100000
+memorySize = 20000
 memory = ReplayMemory(memorySize)
 
 # Initialize memory with 1000 random states
@@ -44,7 +44,7 @@ trainer = Trainer(env, device, n_actions, memory)
 ################
 # Train policy #
 ################
-trainer.preTrainMemory(pre_train=int(memorySize/100))
+trainer.preTrainMemory(pre_train=int(memorySize/10))
 print('---Done Pre Training---')
 trainer.train(num_episodes=1000)
 
