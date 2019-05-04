@@ -111,6 +111,8 @@ def train(algo):
                 s_tensor = s_tensor.to(device)
                 a_log_probs = policy(s_tensor)  #calls forward function
                 print(a_log_probs.numpy())
+                print(a_log_probs.numpy().shape)
+
                 estimated_value = critic(s_tensor)
 
 

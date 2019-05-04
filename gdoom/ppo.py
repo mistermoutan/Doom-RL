@@ -32,7 +32,7 @@ class PPO:
 ##################
 # Initialization #
 ##################
-ppo = PPO("doom_scenario2_640-v0",pre_trained=True)
+ppo = PPO("doom_scenario1_640-v0",pre_trained=True)
 
 ################
 # Train policy #
