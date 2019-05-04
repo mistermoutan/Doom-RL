@@ -9,7 +9,8 @@ import cv2
 import utils
 import imageio
 from statistics import Statistics
-imageio.plugins.ffmpeg.download()
+import scipy.misc
+#imageio.plugins.ffmpeg.download()
 import copy
 from buffer import Buffer
 
@@ -48,11 +49,27 @@ def train(algo):
                             method = algo.method,
                             epochs = num_epochs,
                             directory = 'stats/ppo/health' )
+
     statistics.batch_size = batch_size
     statistics.mini_batch_size = minibatch_size
 
+    if algo.pre_trained:
+        #only last layer of classifier
+        
+        #params = policy.state_dict()
+        #params_to_update = list(params['classifier.6.weight']) + list(params['classifier.6.bias'])
+        #optimizer_actor = optim.Adam(params_to_update, lr=lr_actor) #update parameters
 
-    optimizer_actor = optim.Adam(policy.parameters(), lr=lr_actor) #update parameters
+        #train whole classifier
+        optimizer_actor = optim.Adam([
+                {'params': policy.features.parameters()},
+                {'params': policy.classifier.parameters(), 'lr': lr_actor}
+            ], lr=0)
+
+    else:
+        optimizer_actor = optim.Adam(policy.parameters(), lr=lr_actor)
+
+
     optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) #update parameters
 
     lambda_lr = lambda epoch: LR_DECAY**epoch
@@ -74,9 +91,11 @@ def train(algo):
 
         #first initialize env
 
-        s = env.reset()
+        s = env.reset() # now coming in (640, 640, 1, 12) because of tweaks in gdoom_wrappers to get colour
+        s = stack_individual_color_channels(s) 
         states_human_size = [s] #keep 640*640 frame for display purpose
-        s = cropping(s)
+        s = cropping(s,224) # all pretrained models are based on 224x224 input
+    
         num_episode = 1
 
         #create empty buffer
@@ -87,20 +106,21 @@ def train(algo):
         for idx_in_batch in range(batch_size):
             # generate rollout by iteratively evaluating the current policy on the environment
             with torch.no_grad():
-
-                s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
+                # s is 224*224*3*4
+                s_tensor = torch.from_numpy(normalize(s)).float().permute(3,2,0,1)
                 s_tensor = s_tensor.to(device)
                 a_log_probs = policy(s_tensor)  #calls forward function
+                print(a_log_probs.numpy())
                 estimated_value = critic(s_tensor)
 
-            #print(a_prob.numpy())
 
             a = (np.cumsum(np.exp(a_log_probs.cpu().numpy())) > np.random.rand()).argmax() # sample action
             # if np.random.rand() < 0.2:
             #     a = np.random.randint(7)
             s1, r, done, info = env.step(int(a)) #s1 comes in 640x640x4
+            s1 = stack_individual_color_channels(s1)
             states_human_size.append(np.asarray(s1))
-            s1 = cropping(s1)
+            s1 = cropping(s1,224)
             batch_buffer.states.append(s)
             batch_buffer.actions.append(a)
             batch_buffer.a_log_probs.append(a_log_probs.cpu().numpy())
@@ -205,7 +225,27 @@ def train(algo):
 def normalize(img):
     return (img)/255.0
 
-def cropping(s):
+def cropping(s, size):
     frame = np.asarray(s)
-    frame = cv2.resize(frame, (64,64))
-    return frame
+    if len(frame.shape) == 3:
+        frame = cv2.resize(frame, (size,size))
+        return frame
+    elif len(s.shape) == 4:
+        new_s = np.zeros((size,size,3,4))
+        for i in range(s.shape[-1]):
+            # resize each color channel, must be a better way but oh well 
+            r,g,b = cv2.resize(frame[:,:,0,i], (size,size)), cv2.resize(frame[:,:,1,i], (size,size)),cv2.resize(frame[:,:,2,i], (size,size))
+            new_s[:,:,0,i] = r
+            new_s[:,:,1,i] = g
+            new_s[:,:,2,i] = b
+        
+        return new_s
+    
+def stack_individual_color_channels(s):
+    lin_space = [0,3,6,9]
+    new_s = np.zeros((640,640,3,4))
+    for index,i in enumerate(lin_space):
+        r,g,b = s[:,:,0,0 + i] , s[:,:,0, 1 + i] , s[:,:,0,2 + i]
+        stacked = np.dstack((r,g,b))
+        new_s[:,:,:,index] = stacked
+    return new_s

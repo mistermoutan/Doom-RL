@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import cv2
 import utils
 import imageio
+import torchvision.models as models
 
 class PolicyNet(nn.Module):
     """Policy network"""
@@ -38,8 +39,6 @@ class PolicyNet(nn.Module):
             nn.Linear(512, n_actions),
             nn.ELU())
 
-
-
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
@@ -53,6 +52,7 @@ class PolicyNet(nn.Module):
         #print(nn.Softmax(dim=-1)(x))
         #print(nn.LogSoftmax(dim=-1)(x))
         return nn.LogSoftmax(dim=-1)(x)
+
 
 
 class CriticNet(nn.Module):

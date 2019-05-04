@@ -128,6 +128,7 @@ class GDoomEnv(gym.Env):
         self.game.load_config(scenario)
         self.game.set_sound_enabled(self.enable_sound)
         self.game.set_screen_resolution(vizdoom.ScreenResolution.RES_640X480)
+        #self.game.set_screen_format((vizdoom.ScreenFormat.RGB24))
         self.game.set_window_visible(False)
         self.game.get_available_buttons_size()
 

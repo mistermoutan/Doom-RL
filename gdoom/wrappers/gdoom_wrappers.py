@@ -26,7 +26,7 @@ class GPreprocessFrame(gym.ObservationWrapper):
     def observation(self, frame):
         # Set frame to gray
         # print(frame.shape, frame.max())
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
         # Resize the frame to 96x96x1
         frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
