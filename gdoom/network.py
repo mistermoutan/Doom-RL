@@ -53,6 +53,27 @@ class PolicyNet(nn.Module):
         #print(nn.LogSoftmax(dim=-1)(x))
         return nn.LogSoftmax(dim=-1)(x)
 
+class Critic_TL(nn.Module):
+    def __init__(self,vgg):
+        super(Critic_TL,self).__init__()
+        self.final_layer = nn.Sequential(
+            nn.Linear(1000, 512),
+            nn.ReLU(),
+            nn.Linear(512,256),
+            nn.ReLU(),
+            nn.Linear(256,1)
+            )
+
+        self.vgg = vgg
+
+        #for p in self.vgg.features.parameters():
+            #p.requires_grad=False
+
+    def forward(self,x):
+        x = self.vgg(x)
+        x = self.final_layer(x)
+        x *= 10
+        return x
 
 
 class CriticNet(nn.Module):

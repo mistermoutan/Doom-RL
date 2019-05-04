@@ -23,8 +23,8 @@ class Model:
 lr_actor = 5e-5
 lr_critic = 1e-5
 num_epochs = 500
-batch_size = 256
-minibatch_size = 32
+batch_size = 20
+minibatch_size = 10
 
 MAX_GRAD_NORM = 0.5
 
@@ -44,6 +44,8 @@ def train(algo):
     env = algo.env
     policy = algo.policy
     critic = algo.critic
+    softmax = nn.Softmax(dim=-1)
+    logsoftmax = nn.LogSoftmax(dim=-1)
 
     statistics = Statistics(scenario = algo.env_string,
                             method = algo.method,
@@ -55,22 +57,27 @@ def train(algo):
 
     if algo.pre_trained:
         #only last layer of classifier
-        
         #params = policy.state_dict()
         #params_to_update = list(params['classifier.6.weight']) + list(params['classifier.6.bias'])
         #optimizer_actor = optim.Adam(params_to_update, lr=lr_actor) #update parameters
-
         #train whole classifier
+
         optimizer_actor = optim.Adam([
                 {'params': policy.features.parameters()},
                 {'params': policy.classifier.parameters(), 'lr': lr_actor}
             ], lr=0)
 
+
+        optimizer_critic = optim.Adam([
+                {'params': critic.vgg.features.parameters()},
+                {'params': critic.vgg.classifier.parameters(), 'lr': lr_critic/3},
+                {'params': critic.final_layer.parameters(), 'lr': lr_critic}
+            ], lr=0)
+
     else:
         optimizer_actor = optim.Adam(policy.parameters(), lr=lr_actor)
+        optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) #update parameters
 
-
-    optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) #update parameters
 
     lambda_lr = lambda epoch: LR_DECAY**epoch
     scheduler_actor = torch.optim.lr_scheduler.LambdaLR(optimizer_actor, lr_lambda=lambda_lr)
@@ -80,7 +87,6 @@ def train(algo):
     critic = critic.to(device)
 
     max_reward = -1e8
-
     loss_lsq = torch.nn.MSELoss()
     NLL = nn.NLLLoss(reduction='none') # cost
 
@@ -93,11 +99,13 @@ def train(algo):
 
         s = env.reset() # now coming in (640, 640, 1, 12) because of tweaks in gdoom_wrappers to get colour
         s = stack_individual_color_channels(s) 
-        states_human_size = [s] #keep 640*640 frame for display purpose
+        states_human_size = [s] #keep 640*640~*3*4 frame for display purpose
         s = cropping(s,224) # all pretrained models are based on 224x224 input
-    
+        s = mean_rgb_stack(s) # classifier outputs a classification for each of the 4 images in stack
+        # I chose to do the mean of each channel to choose the action, alternatively maybe the most "prevalent" category should decide the action
+        #scipy.misc.imsave('videos/test_color/test_normalize.jpg', s)
+        
         num_episode = 1
-
         #create empty buffer
         batch_buffer = Buffer(batch_size, minibatch_size)
         rewards_of_episode = []
@@ -106,13 +114,11 @@ def train(algo):
         for idx_in_batch in range(batch_size):
             # generate rollout by iteratively evaluating the current policy on the environment
             with torch.no_grad():
-                # s is 224*224*3*4
-                s_tensor = torch.from_numpy(normalize(s)).float().permute(3,2,0,1)
+                # s is 224*224*3*4 -> 4*3*224*224
+                s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,3,224,224)
                 s_tensor = s_tensor.to(device)
-                a_log_probs = policy(s_tensor)  #calls forward function
-                print(a_log_probs.numpy())
-                print(a_log_probs.numpy().shape)
-
+                classification = policy(s_tensor) 
+                a_log_probs = logsoftmax(classification)
                 estimated_value = critic(s_tensor)
 
 
@@ -123,7 +129,8 @@ def train(algo):
             s1 = stack_individual_color_channels(s1)
             states_human_size.append(np.asarray(s1))
             s1 = cropping(s1,224)
-            batch_buffer.states.append(s)
+            s1 = mean_rgb_stack(s1)            
+            batch_buffer.states.append(s) # s is at this point (264,264,3), a single RGB image result of the mean of the stack of 4
             batch_buffer.actions.append(a)
             batch_buffer.a_log_probs.append(a_log_probs.cpu().numpy())
             batch_buffer.rewards_of_batch.append(r)
@@ -139,11 +146,17 @@ def train(algo):
                 statistics.kills_per_episode.append(info['kills'])
                 rewards_of_episode = []
                 num_episode += 1
-                s = cropping(env.reset())
+                s = env.reset()
+                s = stack_individual_color_channels(s) 
+                s = cropping(s,224)
+                s = mean_rgb_stack(s)
+
             else:
                 s = s1
 
-        s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,4,64,64)
+        print("Batch built")
+
+        s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,3,224,224)
         s_tensor = s_tensor.to(device)
         next_value = critic(s_tensor)
         batch_buffer.next_value = next_value
@@ -151,8 +164,12 @@ def train(algo):
         batch_buffer.prepare_batch()
 
         for states, actions, log_prob_old, advantages, returns in batch_buffer:
+            print("optimizing batch")
+
             states = states.to(device)
-            a_log_probs = policy(states.permute(0,3,1,2)) # permute because of channel first in pytorch conv layer
+            vgg_output = policy(states.permute(0,3,1,2)) # permute because of channel first in pytorch conv layer
+            #a_probs = softmax(vgg_output)
+            a_log_probs = logsoftmax(vgg_output)
             values = critic(states.permute(0,3,1,2))
             log_likelihood_new = NLL(a_log_probs, torch.LongTensor(actions).to(device))
             log_likelihood_old = NLL(log_prob_old.view(minibatch_size, -1).to(device), torch.LongTensor(actions).to(device))
@@ -216,9 +233,10 @@ def train(algo):
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
-        if epoch % 50 == 0:
+        if epoch % 1 == 0:
             format_frames = np.array(states_human_size)
-            imageio.mimwrite('videos/training_ppo_'+str(epoch)+'.mp4', format_frames[:,:,:,0], fps = 15)
+            print(format_frames.shape)
+            imageio.mimwrite('videos/transfer_learning_ppo_first_try/'+str(epoch)+'.mp4', format_frames[:,:,:,:,0], fps = 15)
 
     statistics.get_statistics()
     print('done')
@@ -230,11 +248,12 @@ def normalize(img):
 def cropping(s, size):
     frame = np.asarray(s)
     if len(frame.shape) == 3:
+        frame = np.asarray(s)
         frame = cv2.resize(frame, (size,size))
         return frame
-    elif len(s.shape) == 4:
+    elif len(frame.shape) == 4:
         new_s = np.zeros((size,size,3,4))
-        for i in range(s.shape[-1]):
+        for i in range(frame.shape[-1]):
             # resize each color channel, must be a better way but oh well 
             r,g,b = cv2.resize(frame[:,:,0,i], (size,size)), cv2.resize(frame[:,:,1,i], (size,size)),cv2.resize(frame[:,:,2,i], (size,size))
             new_s[:,:,0,i] = r
@@ -250,4 +269,16 @@ def stack_individual_color_channels(s):
         r,g,b = s[:,:,0,0 + i] , s[:,:,0, 1 + i] , s[:,:,0,2 + i]
         stacked = np.dstack((r,g,b))
         new_s[:,:,:,index] = stacked
+    return new_s
+
+def mean_rgb_stack(s):
+    #last dimension is size of stack
+    h,w,colors,stack = s.shape
+    new_s = np.zeros((h,w,colors))
+    for i in range(stack):
+        new_s[:,:,0] += s[:,:,0,i]
+        new_s[:,:,1] += s[:,:,1,i]
+        new_s[:,:,2] += s[:,:,2,i]
+
+    new_s /= stack
     return new_s
