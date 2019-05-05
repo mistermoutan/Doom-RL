@@ -18,8 +18,8 @@ BATCH_SIZE = 32
 MINIBATCH_SIZE = 32
 GAMMA = 0.99
 EPS_START = 1
-EPS_END = 0.1
-EPS_DECAY = 200000
+EPS_END = 0.01
+EPS_DECAY = 0.00005
 TARGET_UPDATE = 1000
 # LEARNING_RATE = 0.000025 for RMSProp, Deep Mind
 # LEARNING_RATE = 0.000065 for Adam, Deep Mind
@@ -86,7 +86,7 @@ class Trainer:
         Have two slopes for decrease in exploration probability.
         '''
         sample = random()
-        eps_threshold = EPS_END + ((EPS_START - EPS_END)*exp(-1. * self.steps_done / EPS_DECAY))
+        eps_threshold = EPS_END + ((EPS_START - EPS_END)*exp(-1. * self.steps_done * EPS_DECAY))
         self.steps_done += 1
         if sample > eps_threshold:
             with torch.no_grad():
@@ -232,7 +232,7 @@ class Trainer:
                     break
 
             if (i_episode+1) % PLOT_FREQUENCY == 0:
-                plotRewardsLosses(i_episode, self.life_rewards, self.losses)
+                plotRewardsLosses(i_episode, self.life_rewards, self.losses, pictureName='RewardsLosses,Episode{0}'.format(i_episode))
                 pass
 
             if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (DISPLAY):
