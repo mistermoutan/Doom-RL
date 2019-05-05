@@ -50,7 +50,7 @@ print('\n---- Done Pre Training ----\n---- ESTIMATION FOR EXPERIENCE REPLAY MEMO
 ################
 #     Train    #
 ################
-trainer.train(num_episodes=10)
+trainer.train(num_episodes=5)
 
 
 memory = trainer.getMemory()

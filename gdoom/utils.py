@@ -23,6 +23,8 @@ import cv2
 import warnings
 warnings.filterwarnings("ignore")
 
+HOME_DIR = '/'.join(os.path.dirname(os.path.realpath(__file__)).replace('\\','/').split('/'))
+
 def blockPrint():
     '''
     Disable print() function
@@ -87,13 +89,15 @@ def random_policy_human():
         # the reward, if the env is over, and other info.
         frame, _, _, _ =env_human.step(action)
 
-def plotRewardsLosses(frame_idx, rewards, losses):
+def plotRewardsLosses(frame_idx, rewards, losses, pictureName='Test'):
     clear_output(True)
     plt.figure(figsize=(20,5))
     plt.subplot(121)
-    plt.title('frame %s. reward: %s' % (frame_idx, np.mean(rewards[-10:])))
+    plt.suptitle('frame {0}'.format(frame_idx))
+    plt.title('Rewards')
     plt.plot(rewards)
     plt.subplot(122)
-    plt.title('loss')
+    plt.title('Losses')
     plt.plot(losses)
+    plt.savefig(HOME_DIR + '/saves/images/{0}.jpg'.format(pictureName))
     plt.show()
