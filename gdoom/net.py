@@ -19,6 +19,8 @@ class DeepQNet(nn.Module):
     Neural Net that approximates the Q value
     Input: 4 Frames stacked
     Output: Q-value for every possible actions
+
+    Inspiration: https://github.com/higgsfield/RL-Adventure/blob/master/3.dueling%20dqn.ipynb
     '''
 
     def __init__(self, nbrActions=3):
@@ -28,7 +30,6 @@ class DeepQNet(nn.Module):
             nn.Conv2d(4, 32, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm2d(32),
             nn.ELU())
-        self.conv1
         self.conv2 = nn.Sequential(
             nn.Conv2d(32, 64, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm2d(64),
@@ -37,16 +38,24 @@ class DeepQNet(nn.Module):
             nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm2d(128),
             nn.ELU())
-        self.fc1 = nn.Sequential(
-            nn.Linear(8*16*64, 512),
-            nn.ReLU())
+        # self.fc1 = nn.Sequential(
+        #     nn.Linear(8*16*64, 512),
+        #     nn.ReLU())
+        # self.advantage = nn.Sequential(
+        #     nn.Linear(512, 512),
+        #     nn.elu(),
+        #     nn.Linear(512, nbrActions))
+        # self.value = nn.Sequential(
+        #     nn.Linear(512, 512),
+        #     nn.elu(),
+        #     nn.Linear(512, 1))
         self.advantage = nn.Sequential(
-            nn.Linear(512, 512),
-            nn.ReLU(),
+            nn.Linear(8*16*64, 512),
+            nn.ELU(),
             nn.Linear(512, nbrActions))
         self.value = nn.Sequential(
-            nn.Linear(512, 512),
-            nn.ReLU(),
+            nn.Linear(8*16*64, 512),
+            nn.ELU(),
             nn.Linear(512, 1))
         
     def forward(self, x):
@@ -54,7 +63,7 @@ class DeepQNet(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = x.view(x.shape[0], -1)
-        x = self.fc1(x)
+        #x = self.fc1(x)
         advantage = self.advantage(x)
         value     = self.value(x)
         return value + advantage  - advantage.mean()

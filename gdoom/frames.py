@@ -20,3 +20,4 @@ def display_episode(frames):
             img.set_data(np.asarray(frame))
         plt.pause(0.1)
         plt.draw()
+        

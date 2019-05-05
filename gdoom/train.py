@@ -7,6 +7,7 @@ from utils import *
 # Articles
 # https://gist.github.com/simoninithomas/7611db5d8a6f3edde269e18b97fa4d0c#file-deep-q-learning-with-doom-ipynb
 # https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+# https://github.com/simoninithomas/Deep_reinforcement_learning_Course/blob/master/Dueling%20Double%20DQN%20with%20PER%20and%20fixed-q%20targets/Dueling%20Deep%20Q%20Learning%20with%20Doom%20%28%2B%20double%20DQNs%20and%20Prioritized%20Experience%20Replay%29.ipynb
 
 # Hyperparameters
 # https://www.nature.com/articles/nature14236/tables/1 Deep Mind's Table
@@ -24,7 +25,7 @@ TARGET_UPDATE = 1000
 # LEARNING_RATE = 0.000065 for Adam, Deep Mind
 LEARNING_RATE = 1e-4
 OPTIMIZE_FREQUENCY = 1
-PLOT_FREQUENCY = 1000
+PLOT_FREQUENCY = 4
 DISPLAY = False
 DISPLAY_FREQUENCY = 10
 
@@ -184,7 +185,6 @@ class Trainer:
         '''
         TRAINING loop.
         '''
-
         for i_episode in range(num_episodes):
             print('Episode: {0}'.format(i_episode + 1))
 
@@ -192,6 +192,7 @@ class Trainer:
             state  = self.env.reset()
             states_human_size = [np.asarray(state)] # Allow visualization of episode.
             state = torchify(preprocessState(state), self.device)
+            avgLoss = 0
             for t in count():
                 # Select and perform an action
                 action = self.select_action(state)
@@ -215,6 +216,7 @@ class Trainer:
                 # Perform optimization (on the target network)
                 if self.steps_done % OPTIMIZE_FREQUENCY == 0:
                     loss = self.optimize_model()
+                    avgLoss += loss
                     self.losses.append(loss)
 
                 # Update the target network, copying all weights and biases in DQN
@@ -226,14 +228,15 @@ class Trainer:
                     self.life_reward = 0
                     self.episode_durations.append(t + 1)
                     print(info)
+                    print('Avg loss:{0}'.format(avgLoss/(t+1)))
                     break
 
             if (i_episode+1) % PLOT_FREQUENCY == 0:
+                plotRewardsLosses(i_episode, self.life_rewards, self.losses)
                 pass
-                # plotRewardsLosses(i_episode, self.life_rewards, self.losses)
 
             if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (DISPLAY):
-                display_episode(np.array(states_human_size))
+                # display_episode(np.array(states_human_size))
                 pass
 
 
