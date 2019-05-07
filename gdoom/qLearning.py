@@ -10,8 +10,8 @@ from utils import *
 #    Parameters    #
 ####################
 RECOVER_MEMORY = True
-MEMORY_SIZE = 60000
-NUM_EPISODES = 2000
+MEMORY_SIZE = 80000
+NUM_EPISODES = 3000
 
 #########################################################################################################
 blockPrint()
