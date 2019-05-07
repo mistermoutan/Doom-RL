@@ -229,7 +229,6 @@ class Trainer:
                     self.episode_durations.append(t + 1)
                     print(info)
                     print('Avg loss:{0}'.format(avgLoss/(t+1)))
-                    print('nbr steps:{0}'.format(self.steps_done))
                     break
 
             if (i_episode+1) % PLOT_FREQUENCY == 0:
