@@ -18,8 +18,8 @@ BATCH_SIZE = 32
 MINIBATCH_SIZE = 32
 GAMMA = 0.99
 EPS_START = 1
-EPS_END = 0.01
-EPS_DECAY = 0.00005
+EPS_END = 0.001
+EPS_DECAY = 0.00003
 TARGET_UPDATE = 1000
 # LEARNING_RATE = 0.000025 for RMSProp, Deep Mind
 LEARNING_RATE = 0.000065 #for Adam, Deep Mind
@@ -229,10 +229,11 @@ class Trainer:
                     self.episode_durations.append(t + 1)
                     print(info)
                     print('Avg loss:{0}'.format(avgLoss/(t+1)))
+                    print('nbr steps:{0}'.format(self.steps_done))
                     break
 
             if (i_episode+1) % PLOT_FREQUENCY == 0:
-                plotRewardsLosses(i_episode, self.life_rewards, self.losses, pictureName='RewardsLosses_Episode{0}'.format(i_episode))
+                plotRewardsLosses(i_episode, self.life_rewards, self.losses, pictureName='RewardsLosses_Episode{0}'.format(i_episode+1))
                 pass
 
             if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (DISPLAY):
