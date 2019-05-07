@@ -10,7 +10,8 @@ from utils import *
 #    Parameters    #
 ####################
 RECOVER_MEMORY = True
-MEMORY_SIZE = 20000
+MEMORY_SIZE = 60000
+NUM_EPISODES = 2000
 
 #########################################################################################################
 blockPrint()
@@ -50,7 +51,7 @@ print('\n---- Done Pre Training ----\n---- ESTIMATION FOR EXPERIENCE REPLAY MEMO
 ################
 #     Train    #
 ################
-trainer.train(num_episodes=1500)
+trainer.train(num_episodes=NUM_EPISODES)
 
 
 memory = trainer.getMemory()

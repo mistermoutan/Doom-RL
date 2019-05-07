@@ -22,8 +22,8 @@ EPS_END = 0.01
 EPS_DECAY = 0.00005
 TARGET_UPDATE = 1000
 # LEARNING_RATE = 0.000025 for RMSProp, Deep Mind
-# LEARNING_RATE = 0.000065 for Adam, Deep Mind
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 0.000065 for Adam, Deep Mind
+#LEARNING_RATE = 1e-4
 OPTIMIZE_FREQUENCY = 1
 PLOT_FREQUENCY = 250
 DISPLAY = False
@@ -232,7 +232,7 @@ class Trainer:
                     break
 
             if (i_episode+1) % PLOT_FREQUENCY == 0:
-                plotRewardsLosses(i_episode, self.life_rewards, self.losses, pictureName='RewardsLosses,Episode{0}'.format(i_episode))
+                plotRewardsLosses(i_episode, self.life_rewards, self.losses, pictureName='RewardsLosses_Episode{0}'.format(i_episode))
                 pass
 
             if ((i_episode+1) % DISPLAY_FREQUENCY == 0) and (DISPLAY):
