@@ -152,3 +152,4 @@ gdoom/baselines/common/__pycache__/
 gdoom/wrappers/__pycache__/
 gdoom/__pycache__/
 gdoom/saves/
+epscompute.py

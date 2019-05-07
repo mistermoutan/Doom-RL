@@ -55,7 +55,7 @@ trainer.train(num_episodes=NUM_EPISODES)
 
 
 memory = trainer.getMemory()
-serializeObject(memory, HOME_DIR + '/saves/{0}.pickle'.format(ReplayMemory.getSaveName(MEMORY_SIZE)))
+#serializeObject(memory, HOME_DIR + '/saves/{0}.pickle'.format(ReplayMemory.getSaveName(MEMORY_SIZE)))
 policyNet = trainer.getPolicyNet()
 serializeObject(policyNet, HOME_DIR + '/saves/policyNet.pickle')
 targetNet = trainer.getTargetNet()
