@@ -1,0 +1,16 @@
+date : Mon May  6 04:52:22 2019  
+ method : ppo  
+ scenario : defend_the_center  
+ batch_size : 128  
+ mini_batch_size : 32  
+ steps : 42760  
+ avg_len_episode : 81.75908221797323  
+ avg_reward_episode : 3.1003824091778185  
+ training_time : 16:38:25.873846  
+ avg_kills_episode : 0.040037418147801686  
+ 
+ LAST 100: 
+avg_kills_episode : 4.48  
+ avg_len_episode : 91.26  
+ avg_reward_episode : 4.818000000000001  
+ 

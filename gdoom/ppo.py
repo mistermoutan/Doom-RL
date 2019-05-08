@@ -30,21 +30,28 @@ class PPO:
         self.pre_trained = pre_trained
         if pre_trained:
             model = models.vgg11(pretrained=pre_trained)
+            #only tune last layer of classifier
+            for param in model.parameters():
+                param.requires_grad = False
             model.classifier[6] = nn.Linear(4096,self.env.action_space.n)
             self.policy = model
-            model_critc = models.vgg11(pretrained=pre_trained)
-            self.critic = Critic_TL(model_critc)
+
+            model_critic = models.vgg11(pretrained=pre_trained)
+            # see if this eases off on the computation, only last layer of classifier plus the extra layers
+            for param in model_critic.parameters():
+                param.requires_grad = False
+            model_critic.classifier[6] = nn.Linear(4096,512)
+            self.critic = Critic_TL(model_critic)
         else:
             self.policy = PolicyNet(self.env.action_space.n)
             self.critic = CriticNet()
-
         print("GDoomEnv called")
 
 
 ##################
 # Initialization #
 ##################
-ppo = PPO("doom_scenario0_640-v0",pre_trained=True)
+ppo = PPO("doom_scenario2_640-v0",pre_trained=True)
 
 ################
 # Train policy #

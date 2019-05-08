@@ -13,6 +13,7 @@ import scipy.misc
 #imageio.plugins.ffmpeg.download()
 import copy
 from buffer import Buffer
+import os
 
 """
 class Model:
@@ -23,11 +24,9 @@ class Model:
 lr_actor = 5e-5
 lr_critic = 1e-5
 num_epochs = 500
-batch_size = 20
-minibatch_size = 10
-
+batch_size = 128
+minibatch_size = 32
 MAX_GRAD_NORM = 0.5
-
 PPO_EPSILON = 0.2
 CRITIC_BALANCE = 0.5
 ENTROPY_BETA = 0.01
@@ -50,33 +49,44 @@ def train(algo):
     statistics = Statistics(scenario = algo.env_string,
                             method = algo.method,
                             epochs = num_epochs,
-                            directory = 'stats/ppo/health' )
+                            directory = 'stats/ppo_transfer_learn/corridor' )
 
     statistics.batch_size = batch_size
     statistics.mini_batch_size = minibatch_size
 
     if algo.pre_trained:
+
         #only last layer of classifier
-        #params = policy.state_dict()
-        #params_to_update = list(params['classifier.6.weight']) + list(params['classifier.6.bias'])
-        #optimizer_actor = optim.Adam(params_to_update, lr=lr_actor) #update parameters
-        #train whole classifier
+        params = policy.state_dict()
+        #params_to_update_actor = list(params['classifier.6.weight']) + list(params['classifier.6.bias'])
+        params_to_update_actor = []
+        for name,param in policy.named_parameters():
+            if param.requires_grad == True:
+                params_to_update_actor.append(param)            
 
-        optimizer_actor = optim.Adam([
-                {'params': policy.features.parameters()},
-                {'params': policy.classifier.parameters(), 'lr': lr_actor}
-            ], lr=0)
+        params_to_update_critic = []
+        for name,param in critic.named_parameters():
+            if param.requires_grad == True:
+                params_to_update_critic.append(param)
+
+        optimizer_actor = optim.Adam(params_to_update_actor, lr=lr_actor) 
+        optimizer_critic = optim.Adam(params_to_update_critic, lr=lr_critic)
 
 
-        optimizer_critic = optim.Adam([
-                {'params': critic.vgg.features.parameters()},
-                {'params': critic.vgg.classifier.parameters(), 'lr': lr_critic/3},
-                {'params': critic.final_layer.parameters(), 'lr': lr_critic}
-            ], lr=0)
+        #optimizer_actor = optim.Adam([
+        #        {'params': policy.features.parameters()},
+        #        {'params': policy.classifier.parameters(), 'lr': lr_actor}
+        #    ], lr=0)
+
+        #optimizer_critic = optim.Adam([
+        #        {'params': critic.vgg.features.parameters()}, 'lr': 0}
+        #        {'params': critic.vgg.classifier.parameters(), 'lr': lr_critic/3},
+        #        {'params': critic.final_layer.parameters(), 'lr': lr_critic}
+        #    ], lr=0)
 
     else:
         optimizer_actor = optim.Adam(policy.parameters(), lr=lr_actor)
-        optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) #update parameters
+        optimizer_critic = optim.Adam(critic.parameters(),lr = lr_critic) 
 
 
     lambda_lr = lambda epoch: LR_DECAY**epoch
@@ -99,7 +109,7 @@ def train(algo):
 
         s = env.reset() # now coming in (640, 640, 1, 12) because of tweaks in gdoom_wrappers to get colour
         s = stack_individual_color_channels(s) 
-        states_human_size = [s] #keep 640*640~*3*4 frame for display purpose
+        states_human_size = [np.asarray(s,dtype = np.uint8)] #keep 640*640*3*4 frame for display purpose
         s = cropping(s,224) # all pretrained models are based on 224x224 input
         s = mean_rgb_stack(s) # classifier outputs a classification for each of the 4 images in stack
         # I chose to do the mean of each channel to choose the action, alternatively maybe the most "prevalent" category should decide the action
@@ -127,7 +137,7 @@ def train(algo):
             #     a = np.random.randint(7)
             s1, r, done, info = env.step(int(a)) #s1 comes in 640x640x4
             s1 = stack_individual_color_channels(s1)
-            states_human_size.append(np.asarray(s1))
+            states_human_size.append(np.asarray(s1,dtype = np.uint8))
             s1 = cropping(s1,224)
             s1 = mean_rgb_stack(s1)            
             batch_buffer.states.append(s) # s is at this point (264,264,3), a single RGB image result of the mean of the stack of 4
@@ -142,7 +152,7 @@ def train(algo):
             if done:
                 batch_buffer.masks.append(0)
                 statistics.rewards_per_episode.append(info['accumulated_reward']) #not with the death penalty
-                statistics.lenght_episodes.append(info['time_alive'])
+                statistics.length_episodes.append(info['time_alive'])
                 statistics.kills_per_episode.append(info['kills'])
                 rewards_of_episode = []
                 num_episode += 1
@@ -155,7 +165,7 @@ def train(algo):
                 s = s1
 
         print("Batch built")
-
+        statistics.episode_per_epoch.append(num_episode)
         s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,3,224,224)
         s_tensor = s_tensor.to(device)
         next_value = critic(s_tensor)
@@ -233,10 +243,12 @@ def train(algo):
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
-        if epoch % 1 == 0:
+        if epoch % 50 == 0:
             format_frames = np.array(states_human_size)
-            print(format_frames.shape)
-            imageio.mimwrite('videos/transfer_learning_ppo_first_try/'+str(epoch)+'.mp4', format_frames[:,:,:,:,0], fps = 15)
+            directory = 'videos/transfer_learning_ppo/'
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            imageio.mimwrite(directory+str(epoch)+'.mp4', format_frames[:,:,:,:,0], fps = 15)
 
     statistics.get_statistics()
     print('done')

@@ -43,6 +43,7 @@ class Buffer:
 
         for minibatch_idx in range(self.batch_size // self.minibatch_size):
             random_indexes = index_order[minibatch_idx*self.minibatch_size:(minibatch_idx+1)*self.minibatch_size]
+            print(minibatch_idx ,"/",self.batch_size // self.minibatch_size)
             yield (self.states[random_indexes],
                    self.actions[random_indexes],
                    self.a_log_probs[random_indexes],
