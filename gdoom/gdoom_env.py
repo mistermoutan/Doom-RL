@@ -231,6 +231,22 @@ class GDoomEnv(gym.Env):
                 r_t = r_t - 0.5
 
             return r_t/100
+        elif self.level == 4: ## Health Gathering
+            if (misc[0] > prev_misc[0]):
+                r_t = r_t + 100
+
+            if (misc[1] < prev_misc[1]):  # Use ammo
+                r_t = r_t - 5
+
+            if (misc[2] < prev_misc[2]):  # Loss HEALTH
+                r_t = r_t - 3
+            else:
+                r_t = r_t + 10
+
+            return r_t/100
+        elif self.level == 2: ## Defend the center
+            r_t = r_t - (prev_misc[1] - misc[1])/10 + (misc[0] - prev_misc[0])
+            
         else:
             if (misc[0] > prev_misc[0]):
                 r_t = r_t + 1
