@@ -7,12 +7,6 @@ import gym
 from gym import spaces, error
 import vizdoom
 
-import sys 
-sys.path.append('..')
-from utils import network_params
-
-print(network_params.params.scenario)
-
 CPU = 101
 HUMAN = 102
 
@@ -181,7 +175,7 @@ class GDoomEnv(gym.Env):
         elif self.mode == CPU:
             raise Exception("Error")
 
-        
+
 		# takes action and moves to next state
         self.game.advance_action(skiprate)
         r_t = self.game.get_last_reward()
@@ -192,7 +186,7 @@ class GDoomEnv(gym.Env):
                 print("Total reward accumulated: ", self.accumulated_reward, " time alive ", self.time_alive)
             info = {s: misc[k] for k,(s,_) in enumerate(collect_variables)}
             print(info)
-            info2 = info
+            info = {}
             image_buffer = np.zeros(shape=self.observation_space.shape, dtype=np.uint8)
 
         else:
@@ -215,31 +209,25 @@ class GDoomEnv(gym.Env):
         self.info['accumulated_reward'] += r_t
 
         info = self.info.copy()
-        info2 = {s: misc[k] for k,(s,_) in enumerate(collect_variables)}
         # info['accumulated_reward'] = self.accumulated_reward
         # info['reward'] = r_t
         # info['time_alive'] = self.time_alive
 
-        return image_buffer, r_t, is_finished, info2
+        return image_buffer, r_t, is_finished, info
 
     def get_HWC(self):
         return 0
     def shape_reward(self, r_t, misc, prev_misc, t=None):
-        if (network_params.params.scenario == "basic"):
-            r_t = r_t/100 + 1 * misc[0]
-        if (network_params.params.scenario == "deadly_corridor"):
-            r_t = r_t/5 + (misc[0] - prev_misc[0]) * 100 + (misc[1] - prev_misc[1]) * 0.5
-            if (misc[2] < prev_misc[2]):  # Loss HEALTH
-                r_t = r_t - 5
-            r_t = r_t/100
-        elif (network_params.params.scenario == "health_gathering"):
-            r_t = r_t/100
-            if (misc[2] > prev_misc[2]):
-                r_t += 0.1 * (misc[2] - prev_misc[2])
-            else :
-                r_t -= 0.1 * (prev_misc[2] - misc[2])
-        elif (network_params.params.scenario == "defend_the_center"):
-            r_t = r_t - (prev_misc[1] - misc[1])/10 + (misc[0] - prev_misc[0]) 
+        # Check any kill count
+        if (misc[0] > prev_misc[0]):
+            r_t = r_t + 1
+
+        if (misc[1] < prev_misc[1]):  # Use ammo
+            r_t = r_t - 0.1
+
+        if (misc[2] < prev_misc[2]):  # Loss HEALTH
+            r_t = r_t - 0.1
+
         return r_t
 
 

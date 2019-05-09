@@ -1,0 +1,16 @@
+date : Wed May  8 19:02:33 2019  
+ method : a3c  
+ scenario : defend_the_center  
+ batch_size : None  
+ mini_batch_size : None  
+ steps : 911691  
+ avg_len_episode : 130.24157142857143  
+ avg_reward_episode : 12.433142857142695  
+ training_time : 1 day, 0:47:59.735276  
+ avg_kills_episode : 0.06326814677341336  
+ 
+ LAST 100: 
+avg_kills_episode : 13.77  
+ avg_len_episode : 189.16  
+ avg_reward_episode : 23.06300000000002  
+ 

@@ -1,0 +1,16 @@
+date : Sat May  4 16:31:47 2019  
+ method : a3c  
+ scenario : basic  
+ batch_size : None  
+ mini_batch_size : None  
+ steps : 47751  
+ avg_len_episode : 19.89625  
+ avg_reward_episode : 1.162291666666681  
+ training_time : 1:49:54.564162  
+ avg_kills_episode : 0.03185273606835459  
+ 
+ LAST 100: 
+avg_kills_episode : 0.99  
+ avg_len_episode : 6.98  
+ avg_reward_episode : 2.7220999999999997  
+ 

@@ -1,0 +1,16 @@
+date : Thu May  9 06:15:54 2019  
+ method : a3c  
+ scenario : health_gathering  
+ batch_size : None  
+ mini_batch_size : None  
+ steps : 203672  
+ avg_len_episode : 84.86333333333333  
+ avg_reward_episode : 9.289862500000119  
+ training_time : 7:06:16.422210  
+ avg_kills_episode : 0.0  
+ 
+ LAST 100: 
+avg_kills_episode : 0.0  
+ avg_len_episode : 77.0  
+ avg_reward_episode : 8.340000000000005  
+ 
