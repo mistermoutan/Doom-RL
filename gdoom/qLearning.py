@@ -11,7 +11,7 @@ from statWriter import *
 #    Parameters    #
 ####################
 RECOVER_MEMORY = True
-MEMORY_SIZE = 100000
+MEMORY_SIZE = 120000
 NUM_EPISODES = 6000
 SCENARIO = 'scenario2'
 
@@ -61,6 +61,7 @@ stats.get_statistics()
 memory = trainer.getMemory()
 #serializeObject(memory, HOME_DIR + '/saves/{0}.pickle'.format(ReplayMemory.getSaveName(MEMORY_SIZE)))
 policyNet = trainer.getPolicyNet()
-serializeObject(policyNet, HOME_DIR + '/saves/policyNet.pickle')
+torch.save(policyNet.state_dict(), HOME_DIR + '/saves/policyNetParams.pickle')
 targetNet = trainer.getTargetNet()
-serializeObject(targetNet, HOME_DIR + '/saves/targetNet.pickle')
+torch.save(targetNet.state_dict(), HOME_DIR + '/saves/targetNetParams.pickle')
+

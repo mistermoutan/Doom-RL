@@ -8,6 +8,7 @@ from utils import *
 # https://gist.github.com/simoninithomas/7611db5d8a6f3edde269e18b97fa4d0c#file-deep-q-learning-with-doom-ipynb
 # https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 # https://github.com/simoninithomas/Deep_reinforcement_learning_Course/blob/master/Dueling%20Double%20DQN%20with%20PER%20and%20fixed-q%20targets/Dueling%20Deep%20Q%20Learning%20with%20Doom%20%28%2B%20double%20DQNs%20and%20Prioritized%20Experience%20Replay%29.ipynb
+# https://towardsdatascience.com/tutorial-double-deep-q-learning-with-dueling-network-architectures-4c1b3fb7f756
 
 # Hyperparameters
 # https://www.nature.com/articles/nature14236/tables/1 Deep Mind's Table
@@ -20,7 +21,7 @@ GAMMA = 0.99
 EPS_START = 1
 EPS_END = 0.001
 EPS_DECAY = 0.00005
-TARGET_UPDATE = 1000
+TARGET_UPDATE = 10000 # https://github.com/deepmind/dqn/blob/9d9b1d13a2b491d6ebd4d046740c511c662bbe0f/run_gpu#L31
 # LEARNING_RATE = 0.000025 for RMSProp, Deep Mind
 LEARNING_RATE = 0.000065 #for Adam, Deep Mind
 #LEARNING_RATE = 1e-4
