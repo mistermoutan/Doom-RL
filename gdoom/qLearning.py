@@ -4,14 +4,16 @@ from gdoom_env import *
 from train import *
 from experienceReplay import *
 from utils import *
+from statWriter import *
 
 
 ####################
 #    Parameters    #
 ####################
 RECOVER_MEMORY = True
-MEMORY_SIZE = 80000
-NUM_EPISODES = 5000
+MEMORY_SIZE = 100000
+NUM_EPISODES = 6000
+SCENARIO = 'scenario2'
 
 #########################################################################################################
 blockPrint()
@@ -20,7 +22,7 @@ genv = WGDoomEnv(level=1, frame_size=640)
 
 # Also make a GPU environment, but using openai:
 enablePrint()
-env = gym.make("doom_scenario2_640-v0")
+env = gym.make("doom_{0}_640-v0".format(SCENARIO))
 frame = env.reset()
 
 # If gpu is to be used.
@@ -51,7 +53,9 @@ print('\n---- Done Pre Training ----\n---- ESTIMATION FOR EXPERIENCE REPLAY MEMO
 ################
 #     Train    #
 ################
-trainer.train(num_episodes=NUM_EPISODES)
+stats = Statistics(SCENARIO, 'ddqn', NUM_EPISODES, HOME_DIR+'/stats/ddqn/'+SCENARIO +'/')
+trainer.train(num_episodes=NUM_EPISODES, statisticsInstance=stats)
+stats.get_statistics()
 
 
 memory = trainer.getMemory()

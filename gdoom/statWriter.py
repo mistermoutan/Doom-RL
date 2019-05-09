@@ -48,7 +48,7 @@ class Statistics:
 
         #PER EPISODE
         self.rewards_per_episode = [] #final value of reward obtained at end of episode
-        self.lenght_episodes = []
+        self.length_episodes = []
         self.kills_per_episode = [] #if relevant to level
 
         # PER EPOCH
@@ -71,7 +71,7 @@ class Statistics:
 
         self.stats = {}
         self.stats_last100episodes = {}
-        assert len(self.rewards_per_episode) == len(self.lenght_episodes)
+        assert len(self.rewards_per_episode) == len(self.length_episodes)
 
         self.stats["date"] = time.strftime("%c")
         self.stats["method"] = self.method
@@ -79,8 +79,8 @@ class Statistics:
         self.stats["batch_size"] = self.batch_size
         self.stats["mini_batch_size"] = self.mini_batch_size
 
-        self.stats["steps"] = sum(self.lenght_episodes) #actions taken or sets of 4 frames fed to network
-        self.stats["avg_len_episode"] = self.stats["steps"] / len(self.lenght_episodes)
+        self.stats["steps"] = sum(self.length_episodes) #actions taken or sets of 4 frames fed to network
+        self.stats["avg_len_episode"] = self.stats["steps"] / len(self.length_episodes)
         self.stats["avg_reward_episode"] = sum(self.rewards_per_episode) / len(self.rewards_per_episode)
         self.stats["training_time"] = str(datetime.timedelta(seconds=self.end_time - self.start_time))
 
@@ -90,7 +90,7 @@ class Statistics:
 
 
 
-        self.stats_last100episodes["avg_len_episode"] = sum(self.lenght_episodes[-100:]) / 100
+        self.stats_last100episodes["avg_len_episode"] = sum(self.length_episodes[-100:]) / 100
         self.stats_last100episodes["avg_reward_episode"] = sum(self.rewards_per_episode[-100:]) / 100
 
         if save:
@@ -103,7 +103,7 @@ class Statistics:
 
         dict_of_arrays = {}
         dict_of_arrays["rewards_per_episode"] = self.rewards_per_episode
-        dict_of_arrays["len_episodes"] = self.lenght_episodes
+        dict_of_arrays["len_episodes"] = self.length_episodes
         if self.kills_per_episode:
             dict_of_arrays["kills_per_episode"] = self.kills_per_episode
 
@@ -115,7 +115,7 @@ class Statistics:
 
     def save_graphs (self):
 
-        assert len(self.loss_actor) == len(self.loss_critic)
+        
         #evolution of network losses
         figure = plt.figure()
         x_axis = np.arange(len(self.loss_actor))
@@ -123,7 +123,8 @@ class Statistics:
         plt.title("ACTOR/POLICY LOSS")
         figure.savefig(self.directory + "loss_actor_evolution.png")
 
-        if self.loss_critic:
+        if len(self.loss_critic) > 0:
+            assert len(self.loss_actor) == len(self.loss_critic)
             figure = plt.figure()
             x_axis = np.arange(len(self.loss_critic))
             plt.plot(x_axis,self.loss_critic)
@@ -137,12 +138,12 @@ class Statistics:
         plt.title("REWARDS PER EPISODE")
         figure.savefig(self.directory + "rewards_per_episode_evolution.png")
 
-        #evolution of episode lenght
+        #evolution of episode length
         figure = plt.figure()
         plt.title("LENGHT OF EPISODES")
-        x_axis = np.arange(len(self.lenght_episodes))
-        plt.plot(x_axis,self.lenght_episodes)
-        figure.savefig(self.directory + "lenght_of_episode_evolution.png")
+        x_axis = np.arange(len(self.length_episodes))
+        plt.plot(x_axis,self.length_episodes)
+        figure.savefig(self.directory + "length_of_episode_evolution.png")
 
         if self.kills_per_episode:
             figure = plt.figure()

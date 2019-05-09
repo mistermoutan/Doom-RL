@@ -181,7 +181,7 @@ class Trainer:
         return mean(losses)
 
 
-    def train(self, num_episodes=1000):
+    def train(self, num_episodes=1000, statisticsInstance=None):
         '''
         TRAINING loop.
         '''
@@ -229,6 +229,14 @@ class Trainer:
                     self.episode_durations.append(t + 1)
                     print(info)
                     print('Avg loss:{0}'.format(avgLoss/(t+1)))
+
+                    # Stats feeding
+                    if statisticsInstance != None:
+                        # {'accumulated_reward': 179.60000000000008, 'time_alive': 251, 'kills': 17.0}
+                        statisticsInstance.rewards_per_episode.append(info['accumulated_reward'])
+                        statisticsInstance.length_episodes.append(info['time_alive'])
+                        statisticsInstance.kills_per_episode.append(info['kills'])
+                        statisticsInstance.loss_actor.append(avgLoss/(t+1))
                     break
 
             if (i_episode+1) % PLOT_FREQUENCY == 0:
