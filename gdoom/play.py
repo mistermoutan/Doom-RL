@@ -6,7 +6,7 @@ from utils import *
 from serialization import *
 
 ## PARAMETERS
-FILENAME = HOME_DIR + '/saves/policyNetParams.pickle'
+FILENAME = HOME_DIR + '/saves/policyNetParams_trained.pickle'
 SCENARIO = 'scenario2'
 NBR_EPISODES = 5
 
@@ -30,7 +30,7 @@ n_actions = env.action_space.n
 
 #net = readPickled(FILENAME).to(device)
 net = DeepQNet(nbrActions=n_actions).to(device)
-net.load_state_dict(torch.load(FILENAME))
+net.load_state_dict(torch.load(FILENAME, map_location='cpu'))
 kills = []
 for episode in range(NBR_EPISODES):
 

@@ -51,11 +51,11 @@ class DeepQNet(nn.Module):
         #     nn.Linear(512, 1))
         self.advantage = nn.Sequential(
             nn.Linear(8*16*64, 512),
-            nn.ReLU(),
+            nn.ELU(),
             nn.Linear(512, nbrActions))
         self.value = nn.Sequential(
             nn.Linear(8*16*64, 512),
-            nn.ReLU(),
+            nn.ELU(),
             nn.Linear(512, 1))
         
     def forward(self, x):
