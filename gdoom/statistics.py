@@ -32,7 +32,7 @@ class Statistics:
         self.directory = directory
         if not os.path.exists(directory):
             os.makedirs(directory)
-            print('Creating new directory:: ', directory)
+            print('Creating new directory: ', directory)
         self.scenario = scenario
         self.method = method # the algorithm used
         self.epochs = epochs
@@ -80,14 +80,13 @@ class Statistics:
 
         self.stats["steps"] = sum(self.length_episodes) #actions taken or sets of 4 frames fed to network
         self.stats["avg_len_episode"] = self.stats["steps"] / len(self.length_episodes)
+        
         self.stats["avg_reward_episode"] = sum(self.rewards_per_episode) / len(self.rewards_per_episode)
         self.stats["training_time"] = str(datetime.timedelta(seconds=self.end_time - self.start_time))
 
         if self.kills_per_episode:
             self.stats["avg_kills_episode"] = sum(self.kills_per_episode) / self.stats["steps"]
             self.stats_last100episodes["avg_kills_episode"] = sum(self.kills_per_episode[-100:]) / 100
-
-
 
         self.stats_last100episodes["avg_len_episode"] = sum(self.length_episodes[-100:]) / 100
         self.stats_last100episodes["avg_reward_episode"] = sum(self.rewards_per_episode[-100:]) / 100

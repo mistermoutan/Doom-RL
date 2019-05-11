@@ -14,6 +14,7 @@ import scipy.misc
 import copy
 from buffer import Buffer
 import os
+import pickle
 
 """
 class Model:
@@ -23,8 +24,8 @@ class Model:
 
 lr_actor = 5e-5
 lr_critic = 1e-5
-num_epochs = 500
-batch_size = 256
+num_epochs = 2
+batch_size = 128
 minibatch_size = 32
 MAX_GRAD_NORM = 0.5
 PPO_EPSILON = 0.2
@@ -49,7 +50,8 @@ def train(algo):
     statistics = Statistics(scenario = algo.env_string,
                             method = algo.method,
                             epochs = num_epochs,
-                            directory = 'stats/ppo_transfer_learn/corridor' )
+                            directory = 'stats/ppo_transfer_learn/defend_the_center/run1/')
+
 
     statistics.batch_size = batch_size
     statistics.mini_batch_size = minibatch_size
@@ -250,6 +252,11 @@ def train(algo):
             imageio.mimwrite(directory+str(epoch)+'.mp4', format_frames[:,:,:,:,0], fps = 15)
 
     statistics.get_statistics()
+    directory = 'saved_models/transfer_learning_ppo/'
+    if not os.path.exists(directory):
+            os.makedirs(directory)
+    torch.save(policy.state_dict(),directory + 'policiyParams.pickle')
+    torch.save(critic.state_dict(), directory +'criticParams.pickle')
     print('done')
 
 
