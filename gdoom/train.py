@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import cv2
 import utils
-import imageio
+#import imageio
 from statistics import Statistics
 import scipy.misc
 #imageio.plugins.ffmpeg.download()
@@ -244,20 +244,25 @@ def train(algo):
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
-        if epoch % 50 == 0:
-            format_frames = np.array(states_human_size)
-            directory = 'videos/transfer_learning_ppo/'
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            imageio.mimwrite(directory+str(epoch)+'.mp4', format_frames[:,:,:,:,0], fps = 15)
+        #if epoch % 50 == 0:
+            #format_frames = np.array(states_human_size)
+            #directory = 'videos/transfer_learning_ppo/'
+            #if not os.path.exists(directory):
+            #    os.makedirs(directory)
+            #imageio.mimwrite(directory+str(epoch)+'.mp4', format_frames[:,:,:,:,0], fps = 15)
 
     statistics.get_statistics()
+    write_pickle(states_human_size,"states_human_size/transfer_learning_ppo/run1/",'states_human_size')
     directory = 'saved_models/transfer_learning_ppo/'
     if not os.path.exists(directory):
             os.makedirs(directory)
     torch.save(policy.state_dict(),directory + 'policiyParams.pickle')
     torch.save(critic.state_dict(), directory +'criticParams.pickle')
     print('done')
+
+def write_pickle (f, path, fname):
+        with open(path + fname, 'wb') as handle:
+            pickle.dump(f, handle, protocol = pickle.HIGHEST_PROTOCOL)
 
 
 def normalize(img):
