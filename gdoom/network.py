@@ -9,7 +9,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import cv2
 import utils
-import imageio
+#import imageio
 import torchvision.models as models
 
 class PolicyNet(nn.Module):
