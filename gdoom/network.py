@@ -63,13 +63,13 @@ class Critic_TL(nn.Module):
             )
 
         self.vgg = vgg
-
-        #for p in self.vgg.features.parameters():
-        #    p.requires_grad=False
+        for p in self.vgg.features.parameters():
+            p.requires_grad=False
+            
     def forward(self,x):
         x = self.vgg(x)
         x = self.final_layer(x)
-        x *= 10
+        x *= 5
         return x
 
 

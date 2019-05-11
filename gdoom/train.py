@@ -24,7 +24,7 @@ class Model:
 lr_actor = 5e-5
 lr_critic = 1e-5
 num_epochs = 500
-batch_size = 128
+batch_size = 256
 minibatch_size = 32
 MAX_GRAD_NORM = 0.5
 PPO_EPSILON = 0.2
@@ -130,7 +130,6 @@ def train(algo):
                 classification = policy(s_tensor) 
                 a_log_probs = logsoftmax(classification)
                 estimated_value = critic(s_tensor)
-
 
             a = (np.cumsum(np.exp(a_log_probs.cpu().numpy())) > np.random.rand()).argmax() # sample action
             # if np.random.rand() < 0.2:
