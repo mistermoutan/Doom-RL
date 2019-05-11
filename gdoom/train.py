@@ -24,8 +24,8 @@ class Model:
 
 lr_actor = 5e-5
 lr_critic = 1e-5
-num_epochs = 2
-batch_size = 128
+num_epochs = 1000
+batch_size = 256
 minibatch_size = 32
 MAX_GRAD_NORM = 0.5
 PPO_EPSILON = 0.2
