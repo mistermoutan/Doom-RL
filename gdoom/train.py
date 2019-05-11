@@ -244,11 +244,11 @@ def train(algo):
         print("Training Loss for Critic: {0:.2f}".format(loss_critic.item()))
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
-        if epoch % 100 == 0:
-            directory = "states_human_size/transfer_learning_ppo/run1/"
-            if not os.path.exists(directory):
-                os.makedirs(directory)           
-            write_pickle(states_human_size,"states_human_size/transfer_learning_ppo/run1/",'states_human_size_' + str(epoch))
+        #if epoch % 100 == 0:
+            #directory = "states_human_size/transfer_learning_ppo/run1/"
+            #if not os.path.exists(directory):
+            #    os.makedirs(directory)           
+            #write_pickle(states_human_size,"states_human_size/transfer_learning_ppo/run1/",'states_human_size_' + str(epoch))
 
             #format_frames = np.array(states_human_size)
             #directory = 'videos/transfer_learning_ppo/'
@@ -257,7 +257,7 @@ def train(algo):
             #imageio.mimwrite(directory+str(epoch)+'.mp4', format_frames[:,:,:,:,0], fps = 15)
 
     statistics.get_statistics()
-    directory = 'saved_models/transfer_learning_ppo/'
+    directory = 'saved_models/transfer_learning_ppo/run1/'
     if not os.path.exists(directory):
             os.makedirs(directory)
     torch.save(policy.state_dict(),directory + 'policiyParams.pickle')

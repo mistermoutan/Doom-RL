@@ -80,7 +80,7 @@ class Statistics:
 
         self.stats["steps"] = sum(self.length_episodes) #actions taken or sets of 4 frames fed to network
         self.stats["avg_len_episode"] = self.stats["steps"] / len(self.length_episodes)
-        
+
         self.stats["avg_reward_episode"] = sum(self.rewards_per_episode) / len(self.rewards_per_episode)
         self.stats["training_time"] = str(datetime.timedelta(seconds=self.end_time - self.start_time))
 
