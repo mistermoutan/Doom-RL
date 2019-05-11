@@ -268,7 +268,6 @@ def write_pickle (f, path, fname):
         with open(path + fname, 'wb') as handle:
             pickle.dump(f, handle, protocol = pickle.HIGHEST_PROTOCOL)
 
-
 def normalize(img):
     return (img)/255.0
 
