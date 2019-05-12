@@ -24,7 +24,7 @@ class A2C:
 ##################
 # Initialization #
 ##################
-a2c = A2C("doom_scenario7_640-v0")
+a2c = A2C("doom_scenario2_640-v0")
 
 ################
 # Train policy #

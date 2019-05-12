@@ -12,6 +12,7 @@ import utils
 import imageio
 import copy
 from statistics import Statistics
+import os
 
 """
 class Model:
@@ -23,11 +24,11 @@ def train_a2c(a2c):
     env = a2c.env
     policy = a2c.policy
     critic = a2c.critic
-    num_epochs = 5
-    statistics = Statistics(scenario = a2c.env_string, method = a2c.method, epochs = num_epochs, directory = 'stats/test1/' )
-    statistics.batch_size = 10
+    num_epochs = 1000
+    statistics = Statistics(scenario = a2c.env_string, method = a2c.method, epochs = num_epochs, directory = 'stats/a2c/run1/defend_the_center/' )
+    statistics.batch_size = 256
 
-    batch_size = 10 # 1 episode only
+    batch_size = 256 # 1 episode only
     discount_factor = 0.95 # reward discount factor (gamma), 1.0 = no discount
     optimizer_actor = optim.Adam(policy.parameters(), lr=0.0001) #update parameters
     optimizer_critic = optim.Adam(critic.parameters(),lr = 0.0001) #update parameters
@@ -73,8 +74,8 @@ def train_a2c(a2c):
                 rewards_of_batch.append(rewards_of_episode)
                 masks.append(0)
                 statistics.rewards_per_episode.append(info['accumulated_reward']) #not with the death penalty
-                statistics.lenght_episodes.append(info['time_alive'])
-                #statistics.kills_per_episode.append(info['kills'])
+                statistics.length_episodes.append(info['time_alive'])
+                statistics.kills_per_episode.append(info['kills'])
 
                 # isn't this just making the final rewards of an episode go small, this should be for each time step
                 discounted_rewards.append(discount_and_normalize_rewards(rewards_of_episode, discount_factor))
@@ -90,6 +91,7 @@ def train_a2c(a2c):
                 masks.append(1)
                 s = s1
 
+        statistics.episode_per_epoch.append(num_episode)
         # prepare batch
         states = np.stack(np.array(states))
         actions = np.stack(np.array(actions))
@@ -149,9 +151,14 @@ def train_a2c(a2c):
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
         
-        if (epoch+1) % 50 == 0:
-            pass
+        if (epoch) % 200 == 0:
+            if not os.path.exists('videos/a2c/defend_the_center/run1/'):
+                os.makedirs('videos/a2c/defend_the_center/run1/')
+            format_frames = np.array(states_human_size)
+            imageio.mimwrite('videos/a2c/defend_the_center/run1/'+str(epoch)+'.mp4', format_frames[:,:,:,0], fps = 15)
 
+            
+    print("GOT HERE")
     statistics.get_statistics()
     print('done')
 

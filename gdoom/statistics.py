@@ -5,6 +5,7 @@ import datetime
 from matplotlib import pyplot as plt
 import numpy as np
 import pickle
+import os
 
 """
 Class to benchmark performance of methods
@@ -32,6 +33,9 @@ class Statistics:
 
         self.start_time = time.time()
         self.directory = directory
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            print('Creating new directory:: ', directory)
         self.scenario = scenario
         self.method = method # the algorithm used
         self.epochs = epochs
@@ -41,23 +45,24 @@ class Statistics:
         self.mini_batch_size = None
 
         # UPDATE THIS DURING TRAINING
-        
+
         #PER EPISODE
         self.rewards_per_episode = [] #final value of reward obtained at end of episode
-        self.lenght_episodes = []
+        self.length_episodes = []
         self.kills_per_episode = [] #if relevant to level
+        self.episode_per_epoch = []
 
         # PER EPOCH
         self.loss_actor = []
         self.loss_critic = []
-        
+
 
     def get_statistics(self):
-        
+
         self.end_time = time.time() #for tracking training time
 
-        self.build_stats_dictionary() 
-        self.save_graphs()  
+        self.build_stats_dictionary()
+        self.save_graphs()
         self.save_log_book()
         self.save_arrays()
 
@@ -68,7 +73,7 @@ class Statistics:
 
         self.stats = {}
         self.stats_last100episodes = {}
-        assert len(self.rewards_per_episode) == len(self.lenght_episodes)
+        assert len(self.rewards_per_episode) == len(self.length_episodes)
 
         self.stats["date"] = time.strftime("%c")
         self.stats["method"] = self.method
@@ -76,8 +81,8 @@ class Statistics:
         self.stats["batch_size"] = self.batch_size
         self.stats["mini_batch_size"] = self.mini_batch_size
 
-        self.stats["steps"] = sum(self.lenght_episodes) #actions taken or sets of 4 frames fed to network
-        self.stats["avg_len_episode"] = self.stats["steps"] / len(self.lenght_episodes)
+        self.stats["steps"] = sum(self.length_episodes) #actions taken or sets of 4 frames fed to network
+        self.stats["avg_len_episode"] = self.stats["steps"] / len(self.length_episodes)
         self.stats["avg_reward_episode"] = sum(self.rewards_per_episode) / len(self.rewards_per_episode)
         self.stats["training_time"] = str(datetime.timedelta(seconds=self.end_time - self.start_time))
 
@@ -85,9 +90,11 @@ class Statistics:
             self.stats["avg_kills_episode"] = sum(self.kills_per_episode) / self.stats["steps"]
             self.stats_last100episodes["avg_kills_episode"] = sum(self.kills_per_episode[-100:]) / 100
 
-        self.stats_last100episodes["avg_len_episode"] = sum(self.lenght_episodes[-100:]) / 100
+
+
+        self.stats_last100episodes["avg_len_episode"] = sum(self.length_episodes[-100:]) / 100
         self.stats_last100episodes["avg_reward_episode"] = sum(self.rewards_per_episode[-100:]) / 100
-    
+
         if save:
             self.write_pickle(self.stats,self.directory,"stats.pickle")
             self.write_pickle(self.stats_last100episodes,self.directory,"stats_last_100.pickle")
@@ -97,13 +104,15 @@ class Statistics:
         """ saves arrays in dict, may be relevant for future comparion between methods"""
 
         dict_of_arrays = {}
-        dict_of_arrays["rewards_per_episode"] = self.rewards_per_episode 
-        dict_of_arrays["len_episodes"] = self.lenght_episodes
+        dict_of_arrays["rewards_per_episode"] = self.rewards_per_episode
+        dict_of_arrays["len_episodes"] = self.length_episodes
         if self.kills_per_episode:
             dict_of_arrays["kills_per_episode"] = self.kills_per_episode
-        
+
         dict_of_arrays["loss_actor"] = self.loss_actor
         dict_of_arrays["loss_critic"] = self.loss_critic
+
+
         self.write_pickle(dict_of_arrays,self.directory,"arrays.pickle")
 
     def save_graphs (self):
@@ -111,37 +120,39 @@ class Statistics:
         assert len(self.loss_actor) == len(self.loss_critic)
         #evolution of network losses
         figure = plt.figure()
-        x_axis = np.arange(len(self.loss_actor))
-        plt.plot(x_axis,self.loss_actor)
+        x_axis = np.linspace(0 , self.stats['steps'],self.epochs)
+        plt.plot(x_axis, self.convert_array_episode_to_epoch(self.loss_actor))
         plt.title("ACTOR/POLICY LOSS")
         figure.savefig(self.directory + "loss_actor_evolution.png")
 
         if self.loss_critic:
             figure = plt.figure()
-            x_axis = np.arange(len(self.loss_critic))
-            plt.plot(x_axis,self.loss_critic)
+
+            # x_axis = np.linspace(0 , self.stats['steps'], len(self.loss_critic))
+            x_axis = np.linspace(0 , self.stats['steps'], self.epochs)
+            plt.plot(x_axis,self.convert_array_episode_to_epoch(self.loss_critic))
             plt.title("CRITIC LOSS")
             figure.savefig(self.directory + "loss_critic.png")
-            
+
         #evolution of rewards per episode
+        x_axis = np.arange(self.epochs)
         figure = plt.figure()
-        x_axis = np.arange(len(self.rewards_per_episode))
-        plt.plot(x_axis,self.rewards_per_episode)
+        plt.plot(x_axis,self.convert_array_episode_to_epoch(self.rewards_per_episode))
         plt.title("REWARDS PER EPISODE")
         figure.savefig(self.directory + "rewards_per_episode_evolution.png")
 
         #evolution of episode lenght
         figure = plt.figure()
         plt.title("LENGHT OF EPISODES")
-        x_axis = np.arange(len(self.lenght_episodes))
-        plt.plot(x_axis,self.lenght_episodes)
+        x_axis = np.arange(len(self.length_episodes))
+        plt.plot(x_axis,self.length_episodes)
         figure.savefig(self.directory + "lenght_of_episode_evolution.png")
 
         if self.kills_per_episode:
             figure = plt.figure()
             plt.title("KILLS PER EPISODE")
-            x_axis = np.arange(len(self.kills_per_episode))
-            plt.plot(x_axis,self.kills_per_episode)
+            x_axis = np.arange(self.epochs)
+            plt.plot(x_axis,self.convert_array_episode_to_epoch(self.kills_per_episode))
             figure.savefig(self.directory + "kills_per_episode_evolution.png")
 
     def save_log_book (self):
@@ -151,6 +162,14 @@ class Statistics:
             logbook.write("\n LAST 100: \n")
             for key,value in self.stats_last100episodes.items():
                 logbook.write("{0} : {1}  \n " .format(key,value))
+
+    def convert_array_episode_to_epoch(self, arr):
+        per_epoch = []
+        index = 0
+        for length in self.episode_per_epoch:
+             per_epoch.append(np.mean(arr[index:(index+length)]))
+             index += length
+        return np.array(per_epoch)
 
 
 
@@ -172,32 +191,19 @@ class Statistics:
             converted_scenario = "predict_position_rocket_launcher"
         elif "scenario7" in self.scenario:
             converted_scenario = "avoid_fireballs"
+        elif "scenario0" in self.scenario:
+            converted_scenario = "basic"
 
         return converted_scenario
 
         #scenario2: defend_the_center
         #scenario3: defend_the_line
         #scenario4: healthy_gathering
-        #scenario5: my_way_home 
+        #scenario5: my_way_home
         #scenario6: predict_position
-        #scenario7: avoid_fireballs 
+        #scenario7: avoid_fireballs
 
     def write_pickle (self, f, path, fname):
 
         with open(path + fname, 'wb') as handle:
             pickle.dump(f, handle, protocol = pickle.HIGHEST_PROTOCOL)
-
-
-
-        
-
-
-
-
-
-
-
-
-    
-
-        
