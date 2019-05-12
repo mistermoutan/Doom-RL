@@ -113,7 +113,6 @@ class Trainer:
         if len(self.memory) < BATCH_SIZE:
             return
 
-        losses = []
         minibatches = self.memory.sample(MINIBATCH_SIZE)
 
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
@@ -167,8 +166,7 @@ class Trainer:
 
 
         # Compute Huber loss
-        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
-        losses.append(loss.item())
+        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='mean')
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -176,7 +174,7 @@ class Trainer:
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
-        return mean(losses)
+        return loss.item()
 
 
     def train(self, num_episodes=1000, statisticsInstance=None):
