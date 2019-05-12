@@ -25,7 +25,7 @@ def train_a2c(a2c):
     policy = a2c.policy
     critic = a2c.critic
     num_epochs = 1000
-    statistics = Statistics(scenario = a2c.env_string, method = a2c.method, epochs = num_epochs, directory = 'stats/a2c/run1/defend_the_center/' )
+    statistics = Statistics(scenario = a2c.env_string, method = a2c.method, epochs = num_epochs, directory = 'stats/a2c/defend_the_center/run1/' )
     statistics.batch_size = 256
 
     batch_size = 256 # 1 episode only
@@ -151,7 +151,7 @@ def train_a2c(a2c):
         #print("Length of last episode: {0:.2f}".format(rewards_of_batch.shape[0]))
 
         
-        if (epoch) % 200 == 0:
+        if (epoch +1) % 200 == 0:
             if not os.path.exists('videos/a2c/defend_the_center/run1/'):
                 os.makedirs('videos/a2c/defend_the_center/run1/')
             format_frames = np.array(states_human_size)
