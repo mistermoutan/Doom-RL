@@ -114,7 +114,7 @@ class Trainer:
         if len(self.memory) < MINIBATCH_SIZE:
             return
 
-        minibatches = self.memory.sample(MINIBATCH_SIZE)
+        treeIndices, minibatches, IS_weights = self.memory.sample(MINIBATCH_SIZE)
 
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions
@@ -166,8 +166,11 @@ class Trainer:
         expected_state_action_values = (new_next_state_values * GAMMA) + reward_batch
 
 
-        # Compute Huber loss
-        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='mean')
+        # Compute Huber loss, with importance sampling.
+        loss = torch.mean(torch.from_numpy(IS_weights).to(self.device)*F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none'))
+        # For priority update.
+        absoluteErrors = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none').detach().numpy()
+
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -175,6 +178,10 @@ class Trainer:
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+
+        # Update priority
+        self.memory.batch_update(treeIndices, absoluteErrors)
+
         return loss.item()
         
 
@@ -254,6 +261,8 @@ class Trainer:
         state = torchify(preprocessState(state), self.device)
 
         for i in range(pre_train):
+            if (i % (pre_train/10) == 0):
+                print('-- Pre Training, {0}/{1} --'.format(i+1,pre_train))
             action = torch.tensor([[randrange(self.n_actions)]], device=self.device, dtype=torch.long)
 
             next_state, reward, done, info = self.env.step(action.item())

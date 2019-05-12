@@ -11,7 +11,7 @@ from statWriter import *
 #    Parameters    #
 ####################
 RECOVER_MEMORY = True
-MEMORY_SIZE = 1200
+MEMORY_SIZE = 200
 NUM_EPISODES = 6
 SCENARIO = 'scenario2'
 
@@ -48,7 +48,7 @@ if (not RECOVER_MEMORY) or noFile:
     # memory = ReplayMemory(MEMORY_SIZE)
     memory = PER(MEMORY_SIZE)
     trainer = Trainer(env, device, n_actions, memory)
-    trainer.preTrainMemory(pre_train=int(MEMORY_SIZE/10))
+    trainer.preTrainMemory(pre_train=MEMORY_SIZE)
 print('\n---- Done Pre Training ----\n---- ESTIMATION FOR EXPERIENCE REPLAY MEMORY SIZE ----\n{0} MB\n'.format(memory.getInMemorySize()))
 
 

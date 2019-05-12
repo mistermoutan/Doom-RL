@@ -1,6 +1,7 @@
 # Using https://gist.github.com/simoninithomas/d6adc6edb0a7f37d6323a5e3d2ab72ec#file-dueling-deep-q-learning-with-doom-double-dqns-and-prioritized-experience-replay-ipynb
 from utils import *
 
+
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
@@ -39,9 +40,10 @@ class SumTree(object):
         change = priority - self.tree[tree_index]
         self.tree[tree_index] = priority
 
+
         # then propagate the change through tree
         while tree_index != 0:
-            tree_index = tree_index - 1 // 2
+            tree_index = (tree_index - 1) // 2
             self.tree[tree_index] += change
 
     def get_leaf(self, v):
@@ -61,7 +63,7 @@ class SumTree(object):
         """
         parent_index = 0
         while True:
-            left_child_index = 2*parent_index + 1
+            left_child_index = (2*parent_index) + 1
             right_child_index = left_child_index + 1
 
             # Reach bottom.
@@ -79,7 +81,7 @@ class SumTree(object):
                     parent_index = right_child_index
 
         data_index = leaf_index - self.capacity + 1
-        return leaf_index, self.tree[leaf_index], self.data[leaf_index]
+        return leaf_index, self.tree[leaf_index], self.data[data_index]
 
     @property
     def total_priority(self):
@@ -130,6 +132,7 @@ class PER(object):
         max_weight = (p_min * minibatch_size) ** (-self.PER_b)
 
         for i in range(minibatch_size):
+            # Sample one experience from each segment.
 
             a, b = priority_segment * i, priority_segment * (i + 1)
             value = np.random.uniform(a, b)
@@ -137,7 +140,6 @@ class PER(object):
             
             # Experience that correspond to each value is retrieved
             index, priority, data = self.tree.get_leaf(value)
-
 
             #P(j)
             sampling_probabilities = priority / self.tree.total_priority
@@ -162,6 +164,12 @@ class PER(object):
 
         for ti, p in zip(tree_idx, ps):
             self.tree.update(ti, p)
+
+    def __len__(self):
+        return self.capacity
+
+    def getInMemorySize(self):
+        return 0.2*self.capacity
 
     @staticmethod
     def getSaveName(memorySize):
