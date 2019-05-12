@@ -8,7 +8,7 @@ from serialization import *
 ## PARAMETERS
 FILENAME = HOME_DIR + '/saves/policyNetParams_trained.pickle'
 SCENARIO = 'scenario2'
-NBR_EPISODES = 5
+NBR_EPISODES = 2
 
 #########################################################################################################
 blockPrint()
