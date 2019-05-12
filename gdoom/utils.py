@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-import matplotlib
-matplotlib.use('Qt5Agg')
+# import matplotlib
+# matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 
@@ -17,6 +17,7 @@ from math import exp
 from statistics import mean
 from random import random, randrange, choice
 from itertools import count
+from collections import namedtuple
 
 import cv2
 
