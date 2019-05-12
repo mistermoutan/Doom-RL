@@ -39,12 +39,14 @@ n_actions = env.action_space.n
 noFile = None
 if RECOVER_MEMORY:
     try:
-        memory = readPickled(HOME_DIR + '/saves/{0}.pickle'.format(ReplayMemory.getSaveName(MEMORY_SIZE)))
+        # memory = readPickled(HOME_DIR + '/saves/{0}.pickle'.format(ReplayMemory.getSaveName(MEMORY_SIZE)))
+        memory = readPickled(HOME_DIR + '/saves/{0}.pickle'.format(PER.getSaveName(MEMORY_SIZE)))
         trainer = Trainer(env, device, n_actions, memory)
     except FileNotFoundError:
         noFile = True
 if (not RECOVER_MEMORY) or noFile:
-    memory = ReplayMemory(MEMORY_SIZE)
+    # memory = ReplayMemory(MEMORY_SIZE)
+    memory = PER(MEMORY_SIZE)
     trainer = Trainer(env, device, n_actions, memory)
     trainer.preTrainMemory(pre_train=int(MEMORY_SIZE/10))
 print('\n---- Done Pre Training ----\n---- ESTIMATION FOR EXPERIENCE REPLAY MEMORY SIZE ----\n{0} MB\n'.format(memory.getInMemorySize()))
@@ -53,7 +55,7 @@ print('\n---- Done Pre Training ----\n---- ESTIMATION FOR EXPERIENCE REPLAY MEMO
 ################
 #     Train    #
 ################
-stats = Statistics(SCENARIO, 'ddqn', NUM_EPISODES, HOME_DIR+'/stats/ddqn/'+SCENARIO +'/')
+stats = Statistics(SCENARIO, 'ddqn_per', NUM_EPISODES, HOME_DIR+'/stats/ddqn_per/'+SCENARIO +'/')
 trainer.train(num_episodes=NUM_EPISODES, statisticsInstance=stats)
 stats.get_statistics()
 

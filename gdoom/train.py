@@ -1,4 +1,5 @@
 from experienceReplay import *
+from prioritizedExperienceReplay import *
 from net import *
 from utils import *
 
@@ -110,7 +111,7 @@ class Trainer:
         '''
         OPTIMIZATION of the policy network.
         '''
-        if len(self.memory) < BATCH_SIZE:
+        if len(self.memory) < MINIBATCH_SIZE:
             return
 
         minibatches = self.memory.sample(MINIBATCH_SIZE)
@@ -175,6 +176,7 @@ class Trainer:
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
         return loss.item()
+        
 
 
     def train(self, num_episodes=1000, statisticsInstance=None):

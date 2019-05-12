@@ -26,7 +26,7 @@ class SumTree(object):
         Here we add our priority score in the sumtree leaf and add the experience in data
         '''
         tree_index = self.data_pointer + self.capacity - 1
-        self.data[self.data_pointer] = data # NOTE: Transition?
+        self.data[self.data_pointer] = data # NOTE: Transition in our case
         self.update(tree_index, priority)
         self.data_pointer += 1
         if self.data_pointer >= self.capacity:
@@ -86,7 +86,7 @@ class SumTree(object):
         return self.tree[0]
     
 
-class Memory(object):
+class PER(object):
     PER_e = 0.01  # Hyperparameter that we use to avoid some experiences to have 0 probability of being taken
     PER_a = 0.6  # Hyperparameter that we use to make a tradeoff between taking only exp with high priority and sampling randomly
     PER_b = 0.4  # importance-sampling, from initial value increasing to 1
@@ -162,6 +162,10 @@ class Memory(object):
 
         for ti, p in zip(tree_idx, ps):
             self.tree.update(ti, p)
+
+    @staticmethod
+    def getSaveName(memorySize):
+        return 'memory_per{0}'.format(memorySize)
 
 
 
