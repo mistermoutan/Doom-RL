@@ -12,12 +12,13 @@ import matplotlib
 from matplotlib import pyplot as plt
 import torch
 
+cuda = torch.cuda.is_available()
+device = "cuda:0" if cuda else "cpu"
 class Softmax(nn.Module):
     def __init__(self, in_dim=1000,):
         super().__init__()
         self.net = nn.Sequential(nn.Linear(in_features=in_dim, out_features=256),
                                  nn.LogSoftmax(dim=-1))
-        
     def forward(self,x):        
         return self.net(x)
 class PPO:
@@ -34,6 +35,7 @@ class PPO:
             for param in model.parameters():
                 param.requires_grad = False
             model.classifier[6] = nn.Linear(4096,self.env.action_space.n)
+            model.cuda()
             self.policy = model
 
             model_critic = models.vgg11(pretrained=pre_trained)
@@ -41,6 +43,7 @@ class PPO:
             for param in model_critic.parameters():
                 param.requires_grad = False
             model_critic.classifier[6] = nn.Linear(4096,512)
+            model_critic.cuda()
             self.critic = Critic_TL(model_critic)
         else:
             self.policy = PolicyNet(self.env.action_space.n)

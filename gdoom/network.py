@@ -12,6 +12,9 @@ import utils
 #import imageio
 import torchvision.models as models
 
+cuda = torch.cuda.is_available()
+device = "cuda:0" if cuda else "cpu"
+
 class PolicyNet(nn.Module):
     """Policy network"""
 
@@ -63,6 +66,7 @@ class Critic_TL(nn.Module):
             )
 
         self.vgg = vgg
+        self.vgg.cuda()
         for p in self.vgg.features.parameters():
             p.requires_grad=False
             

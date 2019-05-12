@@ -129,9 +129,9 @@ def train(algo):
                 # s is 224*224*3*4 -> 4*3*224*224
                 s_tensor = torch.from_numpy(normalize(s)).float().permute(2,0,1).view(1,3,224,224)
                 s_tensor = s_tensor.to(device)
-                classification = policy(s_tensor) 
+                classification = policy(s_tensor).to(device)
                 a_log_probs = logsoftmax(classification)
-                estimated_value = critic(s_tensor)
+                estimated_value = critic(s_tensor).to(device)
 
             a = (np.cumsum(np.exp(a_log_probs.cpu().numpy())) > np.random.rand()).argmax() # sample action
             # if np.random.rand() < 0.2:
