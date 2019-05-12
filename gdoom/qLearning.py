@@ -11,8 +11,8 @@ from statWriter import *
 #    Parameters    #
 ####################
 RECOVER_MEMORY = True
-MEMORY_SIZE = 120000
-NUM_EPISODES = 6000
+MEMORY_SIZE = 1200
+NUM_EPISODES = 6
 SCENARIO = 'scenario2'
 
 #########################################################################################################
