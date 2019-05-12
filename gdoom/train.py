@@ -257,7 +257,7 @@ def train(algo):
             #imageio.mimwrite(directory+str(epoch)+'.mp4', format_frames[:,:,:,:,0], fps = 15)
 
     statistics.get_statistics()
-    directory = 'saved_models/transfer_learning_ppo/run1/'
+    directory = 'saved_models/ppo_transfer_learn/run1/'
     if not os.path.exists(directory):
             os.makedirs(directory)
     torch.save(policy.state_dict(),directory + 'policiyParams.pickle')
