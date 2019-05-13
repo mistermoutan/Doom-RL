@@ -31,7 +31,7 @@ class PPO:
 ##################
 # Initialization #
 ##################
-ppo = PPO("scenario0", pretrained=False)
+ppo = PPO("scenario2", pretrained=False)
 
 ################
 # Train policy #
