@@ -93,7 +93,7 @@ class PER(object):
     PER_a = 0.6  # Hyperparameter that we use to make a tradeoff between taking only exp with high priority and sampling randomly
     PER_b = 0.4  # importance-sampling, from initial value increasing to 1
 
-    PER_b_increment_per_sampling = 0.001
+    PER_b_increment_per_sampling = 0.00025 # Try 0.00025 and 0.000025
     
     absolute_error_upper = 1.  # clipped abs error
 
