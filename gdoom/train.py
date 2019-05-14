@@ -141,7 +141,7 @@ class Trainer:
         # on the "older" target_net; selecting their best reward with max(1)[0].
         # This is merged based on the mask, such that we'll have either the expected
         # state value or 0 in case the state was final.
-        next_state_values = torch.zeros((MINIBATCH_SIZE,3), device=self.device)
+        next_state_values = torch.zeros((MINIBATCH_SIZE,self.n_actions), device=self.device)
         # NOTE WHY NOT CONSIDER THE TERMINATING STATES????
         # Deep Mind paper says that the state action value should be the reward in the case of terminating sequence.
         # Here, It comes from the mask.
