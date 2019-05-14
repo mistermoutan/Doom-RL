@@ -12,8 +12,8 @@ from statWriter import *
 ####################
 RECOVER_MEMORY = True
 MEMORY_SIZE = 200000
-NUM_EPISODES = 10000
-SCENARIO = 'scenario2'
+NUM_EPISODES = 7000
+SCENARIO = 'scenario0'
 
 #########################################################################################################
 blockPrint()
