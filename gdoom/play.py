@@ -6,7 +6,7 @@ from utils import *
 from serialization import *
 
 ## PARAMETERS
-FILENAME = HOME_DIR + '/saves/policyNetParams_trained.pickle'
+FILENAME = HOME_DIR + '/saves/policyNetParams_s2.pickle'
 SCENARIO = 'scenario2'
 NBR_EPISODES = 2
 

@@ -337,7 +337,7 @@ if __name__ == "__main__":
     print("Frame size for cpu player: ", np.asarray(frame).shape )
 
 
-    env_human = gym.make("doom_scenario2_human-v0")
+    env_human = gym.make("doom_scenario1_human-v0")
     frame = env_human.reset()
     print("Frame size for homan player: ", np.asarray(frame).shape)
 
