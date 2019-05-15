@@ -205,7 +205,9 @@ class GDoomEnv(gym.Env):
                 plt.imshow(image_buffer.copy().swapaxes(0,1))
                 plt.show()
 
+        #print('before {0}'.format(r_t))
         r_t = self.shape_reward(r_t, misc, prev_misc)
+        #print('after {0}'.format(r_t))
 
         self.info['accumulated_reward'] += r_t
 
@@ -337,7 +339,7 @@ if __name__ == "__main__":
     print("Frame size for cpu player: ", np.asarray(frame).shape )
 
 
-    env_human = gym.make("doom_scenario1_human-v0")
+    env_human = gym.make("doom_scenario0_human-v0")
     frame = env_human.reset()
     print("Frame size for homan player: ", np.asarray(frame).shape)
 
