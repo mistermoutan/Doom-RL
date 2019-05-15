@@ -28,13 +28,8 @@ class Worker():
             self.env = gym.make(scenario)
             self.actions = self.env.action_space.n
 
-            #Create the local copy of the network and the tensorflow op to copy global parameters to local network
             self.local_AC = AC_Network(s_size, a_size, self.name, trainer, player_mode) 
             self.update_local_ops = update_target_graph('global', self.name)
-
-            #if params.use_curiosity:
-            #    self.local_Pred = StateActionPredictor(s_size, a_size, self.name+"_P", trainer, player_mode)
-            #    self.update_local_ops_P = update_target_graph('global_P',self.name+"_P")  
         
     def initialiaze_game_vars(self):
         self.last_total_health = 100.0
@@ -158,8 +153,6 @@ class Worker():
                             self.name, self.episode_count, self.episode_reward, self.episode_curiosity, self.episode_reward/self.episode_step_count, 
                             self.episode_curiosity/self.episode_step_count, self.episode_step_count, time.time()-self.episode_st))
 
-        ################ missing rewards
-
     def choose_action_index(self, policy, deterministic=False):
 
         if deterministic:
@@ -184,14 +177,11 @@ class Worker():
         rollout = np.array(rollout)
         observations, actions, rewards, next_observations, _, values = rollout.T
         
-        # Process the rollout by constructing variables for the loss functions
         self.rewards_plus = np.asarray(rewards.tolist() + [bootstrap_value])
         discounted_rewards = discount(self.rewards_plus,gamma)[:-1]
         self.value_plus = np.asarray(values.tolist() + [bootstrap_value])
         advantages = discounted_rewards - self.value_plus[:-1]
 
-
-        # Update the local Actor-Critic network using gradients from loss
         feed_dict = {self.local_AC.target_v:discounted_rewards,
                      self.local_AC.inputs:np.vstack(observations),
                      self.local_AC.actions:actions,
@@ -218,20 +208,6 @@ class Worker():
         
         Losses = [self.v_l, self.p_l, self.e_l]
         Grad_vars = [self.g_n, self.v_n]
-        
-
-        # Update the local ICM network using gradients from loss
-        if params.use_curiosity:
-            feed_dict_P = {self.local_Pred.s1:np.vstack(observations),
-                           self.local_Pred.s2:np.vstack(next_observations),
-                           self.local_Pred.aindex:actions}        
-            
-            self.Inv_l, self.Forward_l, _ = sess.run([self.local_Pred.invloss,
-                                                      self.local_Pred.forwardloss,
-                                                      self.local_Pred.apply_grads],
-                                                     feed_dict=feed_dict_P)
-            
-            Losses += [self.Inv_l,self.Forward_l]
             
         return list(np.array(Losses)/len(rollout))+Grad_vars
 
@@ -241,28 +217,20 @@ class Worker():
         print ("Starting worker " + str(self.number))
         self.episode_count = 0
         total_steps = 0
-        # initialize frames bufffer to save gifs
         episode_frames = []
 
         with sess.as_default(), sess.graph.as_default():
             while(not coord.should_stop()) and (self.episode_count < max_episodes):
                 sess.run(self.update_local_ops)
 
-                #initialize training buffer
                 episode_buffer = []
 
-                
-
-                #initialize_variables to record performance for tensorflow summary
                 self.episode_values = []
                 self.episode_reward = 0
                 self.episode_curiosity = 0
                 self.episode_step_count = 0
-
-                #initialize fame vars
                 self.initialiaze_game_vars()
 
-                #begin new epiosde
                 d = False
 
                 frame = np.array(self.env.reset())
@@ -270,12 +238,9 @@ class Worker():
                 frame1 = frame[:,:,1]
                 self.episode_st = time.time()
 
-                #initialize LSTM gates
                 rnn_state = self.local_AC.state_init
                 self.batch_rnn_state = rnn_state
-                    
-                #Get first state and process
-                #s = process_frame_as_pc(frame, crop, resize)
+
                 episode_frames.append(frame)
                 s0 = process_frame(frame0, crop, resize)
                 s1 = process_frame(frame1, crop, resize)
@@ -293,10 +258,6 @@ class Worker():
                     s1, r, done, info = self.env.step(int(action_index))
                     self.last_total_kills = info['kills']
                     self.last_total_health = info['health']
-                    #print(info)
-                    #exit()
-                    #print(r)
-                    #r = r + int(info['ammo'])/10
                     is_episode_done = done
                     s1 = np.array(s1)
                     s10 = s1[:,:,0]
@@ -314,41 +275,22 @@ class Worker():
                     total_steps += 1
                     self.episode_step_count += 1
 
-
-
-                    # If the episode hasn't ended, but maximum steps is reached, we update the global network using the current rollout.
                     if len(episode_buffer) == params.n_steps and done != True and self.episode_step_count != max_episodes - 1:
-                        # Since we don't know what the true final return is, we "bootstrap" from our current value estimation.
                         v1 = sess.run(self.local_AC.value,
                                       feed_dict={self.local_AC.inputs:[s],
                                                  self.local_AC.state_in[0]:rnn_state[0],
                                                  self.local_AC.state_in[1]:rnn_state[1]})[0,0]
                         
                         Losses_grads = self.train(episode_buffer, sess, gamma, v1)
-                        #print("----------------------------------------------------------------")
-                        #print("value: ", self.local_AC.value)
-                        #print("state 0: ", self.local_AC.state_in[0])
-                        #print("state 1: ", self.local_AC.state_in[1])
-                        #print("rnn  state 0: ", rnn_state[0])
-                        #print("rnn state 1: ", rnn_state[1])
-                        #print("sess: ", sess)
-                        #print("gamma: ", gamma)
-                        #print("episode_buffer shape: ", len(episode_buffer))
-                        #print("Losses_grads: ", Losses_grads)
-                        #print("----------------------------------------------------------------")
-                        
                         self.v_l,self.p_l,self.e_l,self.g_n,self.v_n = Losses_grads
                         
                         
                         
-                        # Empty buffer
                         episode_buffer = []
                         
-                        # Copy the global network weights to the local network
                         sess.run(self.update_local_ops)
 
                     if done == True:
-                        # Print perfs of episode
                         self.print_end_episode_perfs()
                         break
 
@@ -356,25 +298,12 @@ class Worker():
                 
                 # Update the network using the episode buffer at the end of the episode.
                 if len(episode_buffer) != 0:
-                    if params.use_curiosity:
-                        self.v_l,self.p_l,self.e_l,self.Inv_l,self.Forward_l,self.g_n,self.v_n = self.train(episode_buffer,sess,gamma,0.0)
-                    else :
-                        self.v_l,self.p_l,self.e_l,self.g_n,self.v_n = self.train(episode_buffer,sess,gamma,0.0)            
+                    self.v_l,self.p_l,self.e_l,self.g_n,self.v_n = self.train(episode_buffer,sess,gamma,0.0)            
                                              
-                # Periodically save gifs of episodes              
-                #if self.name == 'worker_0' and self.episode_count % params.freq_gif_save == 0 and self.episode_count != 0:
-                #    time_per_step = 0.05
-                #    images = np.array(episode_frames)
-                #    gif_path = os.path.join(params.frames_path,'image'+str(self.episode_count)+'.gif')
-                #    make_gif(images, gif_path)
-                
-
-                # Periodically save model parameters
                 if self.episode_count % params.freq_model_save == 0 and self.name == 'worker_0' and self.episode_count != 0:
                     saver.save(sess,self.model_path+'/model-'+str(self.episode_count)+'.cptk')
                     print ("Saved Model")
                 
-                # Periodically save summary statistics
                 if self.episode_count % params.freq_summary == 0 and self.episode_count != 0:
                     self.update_summary()
                 self.episode_count += 1

@@ -228,7 +228,7 @@ class GDoomEnv(gym.Env):
         if (network_params.params.scenario == "basic"):
             r_t = r_t/100 + 1 * misc[0]
         if (network_params.params.scenario == "deadly_corridor"):
-            r_t = r_t/5 + (misc[0] - prev_misc[0]) * 100 + (misc[1] - prev_misc[1]) * 0.5
+            r_t = r_t/5 + (misc[0] - prev_misc[0]) * 100 + (misc[1] - prev_misc[1]) * 0.5                                                                               
             if (misc[2] < prev_misc[2]):  # Loss HEALTH
                 r_t = r_t - 5
             r_t = r_t/100
@@ -239,8 +239,9 @@ class GDoomEnv(gym.Env):
             else :
                 r_t -= 0.1 * (prev_misc[2] - misc[2])
         elif (network_params.params.scenario == "defend_the_center"):
-            r_t = r_t - (prev_misc[1] - misc[1])/10 + (misc[0] - prev_misc[0]) 
+            r_t = r_t - (prev_misc[1] - misc[1])/10 + (misc[0] - prev_misc[0]) * 2
         return r_t
+            
 
 
     def reset(self):
