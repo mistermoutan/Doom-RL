@@ -1,12 +1,13 @@
 from gym.utils.play import play
 from gdoom_env import *
+import imageio
 
 from net import *
 from utils import *
 from serialization import *
 
 ## PARAMETERS
-FILENAME = HOME_DIR + '/saves/policyNetParams_s1.pickle'
+FILENAME = HOME_DIR + '/saves/policyNetParams_s1,1.pickle'
 SCENARIO = 'scenario1'
 NBR_EPISODES = 2
 
@@ -45,6 +46,8 @@ for episode in range(NBR_EPISODES):
 
         if done:
             display_episode(np.array(states_human_size))
+            format_frames = np.array(states_human_size)
+            imageio.mimwrite(HOME_DIR + '/saves/videos/{0}_{1}.mp4'.format(SCENARIO, episode), format_frames[:,:,:,0], fps = 15)
             kills.append(int(info['kills']))
             break
         else:
